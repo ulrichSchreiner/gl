@@ -36,18 +36,18 @@ type JsonDate struct {
 	time.Time
 }
 
-func (j *JsonDate) format() string {
-	return j.Time.Format(jsonDateLayout)
+func (j *JsonDate) format(layout string) string {
+	return j.Time.Format(layout)
 }
 func parseJsonDate(layout, val string) (time.Time, error) {
 	return time.Parse(layout, val)
 }
 func (j *JsonDate) MarshalText() ([]byte, error) {
-	return []byte(j.format()), nil
+	return []byte(j.format(txtjsonDateLayout)), nil
 }
 
 func (j *JsonDate) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + j.format() + `"`), nil
+	return []byte(j.format(jsonDateLayout)), nil
 }
 func (j *JsonDate) UnmarshalJSON(data []byte) (err error) {
 	t, err := parseJsonDate(jsonDateLayout, string(data))
