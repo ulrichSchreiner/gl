@@ -146,7 +146,7 @@ func (g *Client) httpexecute(method, u string, params url.Values, paramInbody bo
 	}
 	req.Header.Add(privateToken, g.token)
 	if g.sudo != nil {
-		req.Header.Add("SUDO", *g.sudo)
+		req.Header.Add(paramSudo, *g.sudo)
 	}
 	resp, err := g.client.Do(req)
 	if err != nil {
