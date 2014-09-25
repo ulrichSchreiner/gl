@@ -17,27 +17,30 @@ func main() {
 	}
 	git := gitlab.Child()
 	git.Token(*token)
-	/*
-		prjs, err := git.AllVisibleProjects()
-		if err != nil {
-			panic(err)
-		}
-		for _, p := range prjs {
-			fmt.Printf("%#v\n", p)
-		}
-		fmt.Println("-----------------")
-		prj, err := git.Project(20)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Printf("%#v\n", prj)
-		fmt.Println("-----------------")
-	*/
-	evts, err := git.AllIssues(20)
+
+	git.CreateProject("test",
+		nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	prjs, err := git.AllVisibleProjects()
 	if err != nil {
 		panic(err)
 	}
-	for _, e := range evts {
-		fmt.Printf("%#v\n", e)
+	for _, p := range prjs {
+		fmt.Printf("%#v\n", p)
 	}
+	/*
+			fmt.Println("-----------------")
+			prj, err := git.Project(20)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Printf("%#v\n", prj)
+			fmt.Println("-----------------")
+		evts, err := git.AllIssues(20)
+		if err != nil {
+			panic(err)
+		}
+		for _, e := range evts {
+			fmt.Printf("%#v\n", e)
+		}
+	*/
 }

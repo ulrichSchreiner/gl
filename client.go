@@ -182,6 +182,10 @@ func (g *Client) execute(method, u string, params url.Values, paramInbody bool, 
 func (g *Client) get(u string, params url.Values, pg *Page, target interface{}) (*Pagination, error) {
 	return g.execute("GET", u, params, false, nil, pg, target)
 }
+func (g *Client) post(u string, params url.Values, target interface{}) error {
+	_, err := g.execute("POST", u, params, true, nil, nil, target)
+	return err
+}
 
 func GetStatusCode(err error, default_code int) int {
 	return errhttp.GetStatusCode(err, default_code)

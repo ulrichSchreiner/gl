@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -86,4 +87,20 @@ func fetchAll(ff fetchFunc, result interface{}) error {
 	}
 	ptr.Elem().Set(targ)
 	return nil
+}
+
+func addString(mp url.Values, key string, val *string) {
+	if val != nil {
+		mp.Set(key, *val)
+	}
+}
+func addInt(mp url.Values, key string, val *int) {
+	if val != nil {
+		mp.Set(key, strconv.Itoa(*val))
+	}
+}
+func addBool(mp url.Values, key string, val *bool) {
+	if val != nil {
+		mp.Set(key, fmt.Sprintf("%v", *val))
+	}
 }

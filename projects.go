@@ -1,6 +1,7 @@
 package gl
 
 import (
+	"net/url"
 	"time"
 )
 
@@ -188,4 +189,43 @@ func (g *Client) AllEvents(pid int) (Events, error) {
 		return nil, err
 	}
 	return ev, nil
+}
+
+func (g *Client) CreateProject(name string, path *string, nsid *int, description *string,
+	issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled *bool,
+	public *bool, vis *VisibilityLevel, importUrl *string) (*Project, error) {
+	return g.createProject(name, nil, path, nsid, description, nil, issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled,
+		public, vis, importUrl)
+}
+func (g *Client) CreateUserProject(name string, uid string, description, defaultbranch *string,
+	issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled *bool,
+	public *bool, vis *VisibilityLevel, importUrl *string) (*Project, error) {
+	return g.createProject(name, &uid, nil, nil, description, defaultbranch,
+		issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled,
+		public, vis, importUrl)
+}
+func (g *Client) createProject(name string, uid, path *string, nsid *int, description, defbranch *string,
+	issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled *bool,
+	public *bool, vis *VisibilityLevel, importUrl *string) (*Project, error) {
+	vals := make(url.Values)
+	vals.Set("name", name)
+	addString(vals, "path", path)
+	addString(vals, "user_id", uid)
+	addInt(vals, "namespace_id", nsid)
+	addString(vals, "default_branch", defbranch)
+	addString(vals, "description", description)
+	addBool(vals, "issues_enabled", issuesEnabled)
+	addBool(vals, "merge_requests_enabled", mergeRQenabled)
+	addBool(vals, "wiki_enabled", wikiEnabled)
+	addBool(vals, "snippets_enabled", snippetsEnabled)
+	addBool(vals, "public", public)
+	if vis != nil {
+		v := int(*vis)
+		addInt(vals, "visibility_level", &v)
+	}
+	addString(vals, "import_url", importUrl)
+
+	var p Project
+	err := g.post(projects_url, vals, &p)
+	return &p, err
 }
