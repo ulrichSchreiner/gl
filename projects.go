@@ -1,7 +1,10 @@
 package gl
 
 import (
+	"fmt"
+	"github.com/spacemonkeygo/errors"
 	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -11,9 +14,14 @@ const (
 	projects_owned_url = "/projects/owned"
 	project_url        = "/projects/:id"
 	project_events_url = "/projects/:id/events"
+	userprojects_url   = "/projects/user/:user_id"
+	members_url        = "/projects/:id/members"
+	member_url         = "/projects/:id/members/:user_id"
 )
 
 type MemberState string
+
+var InvalidParam = errors.NewClass("invalid parameter")
 
 const (
 	MemberActive MemberState = "active"
@@ -34,10 +42,12 @@ type Member struct {
 	Id       int         `json:"id,omitempty"`
 	Username string      `json:"username,omitempty"`
 	EMail    string      `json:"email,omitempty"`
+	Name     string      `json:"name,omitempty"`
 	State    MemberState `json:"state,omitempty"`
 	Created  time.Time   `json:"created_at,omitempty"`
 	Access   AccessLevel `json:"access_level,omitempty"`
 }
+type Members []Member
 
 // The namespace type in gitlab.
 type Namespace struct {
@@ -194,23 +204,22 @@ func (g *Client) AllEvents(pid int) (Events, error) {
 func (g *Client) CreateProject(name string, path *string, nsid *int, description *string,
 	issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled *bool,
 	public *bool, vis *VisibilityLevel, importUrl *string) (*Project, error) {
-	return g.createProject(name, nil, path, nsid, description, nil, issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled,
+	return g.createProject(projects_url, nil, name, path, nsid, description, nil, issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled,
 		public, vis, importUrl)
 }
-func (g *Client) CreateUserProject(name string, uid string, description, defaultbranch *string,
+func (g *Client) CreateUserProject(name string, uid int, description, defaultbranch *string,
 	issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled *bool,
 	public *bool, vis *VisibilityLevel, importUrl *string) (*Project, error) {
-	return g.createProject(name, &uid, nil, nil, description, defaultbranch,
+	return g.createProject(userprojects_url, map[string]interface{}{":user_id": uid}, name, nil, nil, description, defaultbranch,
 		issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled,
 		public, vis, importUrl)
 }
-func (g *Client) createProject(name string, uid, path *string, nsid *int, description, defbranch *string,
+func (g *Client) createProject(purl string, urlparms map[string]interface{}, name string, path *string, nsid *int, description, defbranch *string,
 	issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled *bool,
 	public *bool, vis *VisibilityLevel, importUrl *string) (*Project, error) {
 	vals := make(url.Values)
 	vals.Set("name", name)
 	addString(vals, "path", path)
-	addString(vals, "user_id", uid)
 	addInt(vals, "namespace_id", nsid)
 	addString(vals, "default_branch", defbranch)
 	addString(vals, "description", description)
@@ -225,7 +234,109 @@ func (g *Client) createProject(name string, uid, path *string, nsid *int, descri
 	}
 	addString(vals, "import_url", importUrl)
 
+	if urlparms != nil {
+		purl = expandUrl(purl, urlparms)
+	}
 	var p Project
-	err := g.post(projects_url, vals, &p)
+	err := g.post(purl, vals, &p)
 	return &p, err
+}
+
+func (g *Client) RemoveProject(id int) (*Project, error) {
+	var p Project
+	u := expandUrl(project_url, map[string]interface{}{":id": id})
+	e := g.delete(u, nil, &p)
+	if e != nil {
+		return nil, e
+	}
+	return &p, nil
+}
+
+func (g *Client) AllTeamMembers(id *int, nsname *string, query *string) (Members, error) {
+	var p Members
+	err := fetchAll(func(pg *Page) (interface{}, *Pagination, error) {
+		return g.TeamMembers(id, nsname, query, pg)
+	}, &p)
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func idname(id *int, nam *string) string {
+	sid := ""
+	if id != nil {
+		sid = strconv.Itoa(*id)
+	} else {
+		sid = *nam
+	}
+	return sid
+}
+
+func (g *Client) TeamMembers(id *int, nsname *string, query *string, pg *Page) ([]Member, *Pagination, error) {
+	if id == nil && nsname == nil {
+		return nil, nil, InvalidParam.New("teamid or name must be given")
+	}
+
+	u := expandUrl(members_url, map[string]interface{}{":id": idname(id, nsname)})
+	var p Members
+
+	pager, e := g.get(u, nil, nil, &p)
+	if e != nil {
+		return nil, nil, e
+	}
+	return p, pager, nil
+}
+
+func (g *Client) Member(pid, uid int) (*Member, error) {
+	var p Member
+	u := expandUrl(member_url, map[string]interface{}{":id": pid, ":user_id": uid})
+	_, e := g.get(u, nil, nil, &p)
+	if e != nil {
+		return nil, e
+	}
+	return &p, nil
+}
+
+func (g *Client) AddMember(id *int, nsname *string, uid int, level AccessLevel) (*Member, error) {
+	if id == nil && nsname == nil {
+		return nil, InvalidParam.New("projectid or name must be given")
+	}
+	var p Member
+	u := expandUrl(members_url, map[string]interface{}{":id": idname(id, nsname)})
+	vals := make(url.Values)
+	vals.Set("access_level", fmt.Sprintf("%d", level))
+	e := g.post(u, vals, &p)
+	if e != nil {
+		return nil, e
+	}
+	return &p, nil
+}
+
+func (g *Client) EditMember(id *int, nsname *string, uid int, level AccessLevel) (*Member, error) {
+	if id == nil && nsname == nil {
+		return nil, InvalidParam.New("projectid or name must be given")
+	}
+	u := expandUrl(member_url, map[string]interface{}{":id": idname(id, nsname), ":user_id": uid})
+	var p Member
+	vals := make(url.Values)
+	vals.Set("access_level", fmt.Sprintf("%d", level))
+	e := g.put(u, vals, &p)
+	if e != nil {
+		return nil, e
+	}
+	return &p, nil
+}
+
+func (g *Client) DeleteMember(id *int, nsname *string, uid int) (*Member, error) {
+	if id == nil && nsname == nil {
+		return nil, InvalidParam.New("projectid or name must be given")
+	}
+	u := expandUrl(member_url, map[string]interface{}{":id": idname(id, nsname), ":user_id": uid})
+	var p Member
+	e := g.delete(u, nil, &p)
+	if e != nil {
+		return nil, e
+	}
+	return &p, nil
 }

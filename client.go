@@ -182,6 +182,14 @@ func (g *Client) execute(method, u string, params url.Values, paramInbody bool, 
 func (g *Client) get(u string, params url.Values, pg *Page, target interface{}) (*Pagination, error) {
 	return g.execute("GET", u, params, false, nil, pg, target)
 }
+func (g *Client) put(u string, params url.Values, target interface{}) error {
+	_, err := g.execute("PUT", u, params, false, nil, nil, target)
+	return err
+}
+func (g *Client) delete(u string, params url.Values, target interface{}) error {
+	_, err := g.execute("DELETE", u, params, false, nil, nil, target)
+	return err
+}
 func (g *Client) post(u string, params url.Values, target interface{}) error {
 	_, err := g.execute("POST", u, params, true, nil, nil, target)
 	return err
