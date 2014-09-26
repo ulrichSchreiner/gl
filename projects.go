@@ -17,6 +17,7 @@ const (
 	userprojects_url   = "/projects/user/:user_id"
 	members_url        = "/projects/:id/members"
 	member_url         = "/projects/:id/members/:user_id"
+	hooks_url          = "/projects/:id/hooks"
 )
 
 type MemberState string
@@ -126,6 +127,16 @@ type Event struct {
 	TargetTitle string     `json:"target_title,omitempty"`
 }
 type Events []Event
+
+type Hook struct {
+	Id                  int       `json:"id,omitempty"`
+	Url                 string    `json:"url,omitempty"`
+	ProjectId           int       `json:"project_id,omitempty"`
+	PushEvents          bool      `json:"push_events,omitempty"`
+	IssuesEvents        bool      `json:"issues_events,omitempty"`
+	MergeRequestsEvents bool      `json:"merge_requests_events,omitempty"`
+	CreatedAt           time.Time `json:"created_at, omitempty"`
+}
 
 func (g *Client) projects(purl string, pg *Page) (Projects, *Pagination, error) {
 	var p Projects
@@ -288,7 +299,7 @@ func (g *Client) TeamMembers(id *int, nsname *string, query *string, pg *Page) (
 	return p, pager, nil
 }
 
-func (g *Client) Member(pid, uid int) (*Member, error) {
+func (g *Client) TeamMember(pid, uid int) (*Member, error) {
 	var p Member
 	u := expandUrl(member_url, map[string]interface{}{":id": pid, ":user_id": uid})
 	_, e := g.get(u, nil, nil, &p)
@@ -298,7 +309,7 @@ func (g *Client) Member(pid, uid int) (*Member, error) {
 	return &p, nil
 }
 
-func (g *Client) AddMember(id *int, nsname *string, uid int, level AccessLevel) (*Member, error) {
+func (g *Client) AddTeamMember(id *int, nsname *string, uid int, level AccessLevel) (*Member, error) {
 	if id == nil && nsname == nil {
 		return nil, InvalidParam.New("projectid or name must be given")
 	}
@@ -306,6 +317,7 @@ func (g *Client) AddMember(id *int, nsname *string, uid int, level AccessLevel) 
 	u := expandUrl(members_url, map[string]interface{}{":id": idname(id, nsname)})
 	vals := make(url.Values)
 	vals.Set("access_level", fmt.Sprintf("%d", level))
+	vals.Set("user_id", fmt.Sprintf("%d", uid))
 	e := g.post(u, vals, &p)
 	if e != nil {
 		return nil, e
@@ -313,7 +325,7 @@ func (g *Client) AddMember(id *int, nsname *string, uid int, level AccessLevel) 
 	return &p, nil
 }
 
-func (g *Client) EditMember(id *int, nsname *string, uid int, level AccessLevel) (*Member, error) {
+func (g *Client) EditTeamMember(id *int, nsname *string, uid int, level AccessLevel) (*Member, error) {
 	if id == nil && nsname == nil {
 		return nil, InvalidParam.New("projectid or name must be given")
 	}
@@ -328,7 +340,7 @@ func (g *Client) EditMember(id *int, nsname *string, uid int, level AccessLevel)
 	return &p, nil
 }
 
-func (g *Client) DeleteMember(id *int, nsname *string, uid int) (*Member, error) {
+func (g *Client) DeleteTeamMember(id *int, nsname *string, uid int) (*Member, error) {
 	if id == nil && nsname == nil {
 		return nil, InvalidParam.New("projectid or name must be given")
 	}
@@ -339,4 +351,30 @@ func (g *Client) DeleteMember(id *int, nsname *string, uid int) (*Member, error)
 		return nil, e
 	}
 	return &p, nil
+}
+
+func (g *Client) Hooks(id *int, nsname *string, pg *Page) ([]Hook, *Pagination, error) {
+	var p []Hook
+	if id == nil && nsname == nil {
+		return nil, nil, InvalidParam.New("projectid or name must be given")
+	}
+	u := expandUrl(hooks_url, map[string]interface{}{":id": idname(id, nsname)})
+	pager, e := g.get(u, nil, pg, &p)
+	if e != nil {
+		return nil, nil, e
+	}
+	return p, pager, nil
+}
+func (g *Client) AllHooks(id *int, nsname *string) ([]Hook, error) {
+	var h []Hook
+	if id == nil && nsname == nil {
+		return nil, InvalidParam.New("projectid or name must be given")
+	}
+	err := fetchAll(func(pg *Page) (interface{}, *Pagination, error) {
+		return g.Hooks(id, nsname, pg)
+	}, &h)
+	if err != nil {
+		return nil, err
+	}
+	return h, nil
 }

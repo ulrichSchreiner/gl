@@ -196,7 +196,7 @@ func TestProjects(t *testing.T) {
 		})
 		srv, cl := StubHandler(h)
 		defer srv.Close()
-		m, _ := cl.Member(pid, uid)
+		m, _ := cl.TeamMember(pid, uid)
 		Convey("the url should be correct", func() {
 			So(h.method, ShouldEqual, "GET")
 			So(h.path, ShouldEqual, fmt.Sprintf("/projects/%d/members/%d", pid, uid))
@@ -209,6 +209,95 @@ func TestProjects(t *testing.T) {
 				So(m.Access, ShouldEqual, Developer)
 				So(m.Created.String(), ShouldEqual, created.String())
 			})
+		})
+	})
+	Convey("create a member", t, func() {
+		pid := 54
+		h := th(true, func(v url.Values) (interface{}, error, int) {
+			var m Member
+			m.Access = Master
+			m.Username = "whale"
+			return &m, nil, 200
+		})
+		srv, cl := StubHandler(h)
+		defer srv.Close()
+		_, e := cl.AddTeamMember(nil, nil, 1, Developer)
+		Convey("with no given team-id or name it must shout an error", func() {
+			So(e, ShouldNotBeNil)
+		})
+		m, _ := cl.AddTeamMember(&pid, nil, 12, Master)
+		Convey("the url, parameters and return values should be ok", func() {
+			So(h.method, ShouldEqual, "POST")
+			So(h.path, ShouldEqual, fmt.Sprintf("/projects/%d/members", pid))
+			So(h.get("access_level"), ShouldEqual, fmt.Sprintf("%d", Master))
+			So(h.get("user_id"), ShouldEqual, "12")
+			So(m.Username, ShouldEqual, "whale")
+			So(m.Access, ShouldEqual, Master)
+		})
+	})
+	Convey("edit a member", t, func() {
+		pid := 54
+		memb := 12
+		h := th(false, func(v url.Values) (interface{}, error, int) {
+			var m Member
+			m.Access = Master
+			return &m, nil, 200
+		})
+		srv, cl := StubHandler(h)
+		defer srv.Close()
+		_, e := cl.EditTeamMember(nil, nil, 1, Developer)
+		Convey("with no given team-id or name it must shout an error", func() {
+			So(e, ShouldNotBeNil)
+		})
+		m, _ := cl.EditTeamMember(&pid, nil, memb, Master)
+		Convey("the url, parameters and return values should be ok", func() {
+			So(h.method, ShouldEqual, "PUT")
+			So(h.path, ShouldEqual, fmt.Sprintf("/projects/%d/members/%d", pid, memb))
+			So(h.get("access_level"), ShouldEqual, fmt.Sprintf("%d", Master))
+			So(m.Access, ShouldEqual, Master)
+		})
+	})
+	Convey("delete a member", t, func() {
+		pid := 54
+		memb := 12
+		h := th(false, func(v url.Values) (interface{}, error, int) {
+			var m Member
+			m.Access = Master
+			return &m, nil, 200
+		})
+		srv, cl := StubHandler(h)
+		defer srv.Close()
+		_, e := cl.DeleteTeamMember(nil, nil, 1)
+		Convey("with no given team-id or name it must shout an error", func() {
+			So(e, ShouldNotBeNil)
+		})
+		m, _ := cl.DeleteTeamMember(&pid, nil, memb)
+		Convey("the url and return values should be ok", func() {
+			So(h.method, ShouldEqual, "DELETE")
+			So(h.path, ShouldEqual, fmt.Sprintf("/projects/%d/members/%d", pid, memb))
+			So(m.Access, ShouldEqual, Master)
+		})
+	})
+	Convey("list the team hooks", t, func() {
+		pid := 54
+		h := th(false, func(v url.Values) (interface{}, error, int) {
+			var h Hook
+			h.Url = "myurl"
+			return []Hook{h}, nil, 200
+		})
+		srv, cl := StubHandler(h)
+		defer srv.Close()
+		_, e := cl.AllHooks(nil, nil)
+		Convey("with no given team-id or name it must shout an error", func() {
+			So(e, ShouldNotBeNil)
+		})
+		m, _ := cl.AllHooks(&pid, nil)
+		idpath := h.path
+		idmeth := h.method
+		Convey("but with a teamid it should return a value", func() {
+			So(len(m), ShouldEqual, 1)
+			So(idmeth, ShouldEqual, "GET")
+			So(idpath, ShouldEqual, fmt.Sprintf("/projects/%d/hooks", pid))
 		})
 	})
 }
