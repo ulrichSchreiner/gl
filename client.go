@@ -172,9 +172,11 @@ func (g *Client) execute(method, u string, params url.Values, paramInbody bool, 
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(buf, target)
-	if err != nil {
-		return nil, jsonFormatError.New("cannont unmarshal json: %s", string(buf))
+	if target != nil {
+		err = json.Unmarshal(buf, target)
+		if err != nil {
+			return nil, jsonFormatError.New("cannont unmarshal json: %s", string(buf))
+		}
 	}
 	return pag, nil
 }

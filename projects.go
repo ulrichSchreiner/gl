@@ -18,6 +18,12 @@ const (
 	members_url        = "/projects/:id/members"
 	member_url         = "/projects/:id/members/:user_id"
 	hooks_url          = "/projects/:id/hooks"
+	hook_url           = "/projects/:id/hooks/:hook_id"
+	branches_url       = "/projects/:id/repository/branches"
+	branch_url         = "/projects/:id/repository/branches/:branch"
+	forkfrom_url       = "/projects/:id/fork/:forked_from_id"
+	fork_url           = "/projects/:id/fork"
+	search_url         = "/projects/search/:query"
 )
 
 type MemberState string
@@ -106,13 +112,13 @@ type Repository struct {
 }
 
 type Commit struct {
-	Id         string    `json:"id,omitempty"`
-	Message    string    `json:"message,omitempty"`
-	Timestampe time.Time `json:"timestamp,omitempty"`
-	URL        string    `json:"url,omitempty"`
-	Author     *Author   `json:"author,omitempty"`
+	Id        string      `json:"id,omitempty"`
+	Message   string      `json:"message,omitempty"`
+	Timestamp time.Time   `json:"timestamp,omitempty"`
+	URL       string      `json:"url,omitempty"`
+	Author    *PersonData `json:"author,omitempty"`
 }
-type Author struct {
+type PersonData struct {
 	Name  string `json:"name,omitempty"`
 	Email string `json:"email,omitempty"`
 }
@@ -138,6 +144,36 @@ type Hook struct {
 	CreatedAt           time.Time `json:"created_at, omitempty"`
 }
 
+type CommitParent struct {
+	Id string `json:"id,omitempty"`
+}
+type RepoCommit struct {
+	Id        string         `json:"id,omitempty"`
+	Message   string         `json:"message,omitempty"`
+	Tree      string         `json:"tree,omitempty"`
+	Author    *PersonData    `json:"author,omitempty"`
+	Committer *PersonData    `json:"committer,omitempty"`
+	Authored  time.Time      `json:"authored_date,omitempty"`
+	Committed time.Time      `json:"committed_date,omitempty"`
+	Parents   []CommitParent `json:"parents,omitempty"`
+}
+
+type Branch struct {
+	Name      string
+	Commit    *RepoCommit `json:"commit,omitempty"`
+	Protected bool        `json:"protected,omitempty"`
+}
+
+func idname(id *int, nam *string) string {
+	sid := ""
+	if id != nil {
+		sid = strconv.Itoa(*id)
+	} else {
+		sid = *nam
+	}
+	return sid
+}
+
 func (g *Client) projects(purl string, pg *Page) (Projects, *Pagination, error) {
 	var p Projects
 	pager, e := g.get(purl, nil, pg, &p)
@@ -156,6 +192,13 @@ func (g *Client) allProjects(f fetchFunc) (Projects, error) {
 	return p, nil
 }
 
+func checkName(id *int, nsname *string) error {
+	if id == nil && nsname == nil {
+		return InvalidParam.New("projectid or name must be given")
+	}
+	return nil
+}
+
 func (g *Client) VisibleProjects(pg *Page) (Projects, *Pagination, error) {
 	return g.projects(projects_url, pg)
 }
@@ -165,7 +208,10 @@ func (g *Client) Projects(pg *Page) (Projects, *Pagination, error) {
 func (g *Client) OwnedProjects(pg *Page) (Projects, *Pagination, error) {
 	return g.projects(projects_owned_url, pg)
 }
-
+func (g *Client) Search(name string, pg *Page) (Projects, *Pagination, error) {
+	u := expandUrl(search_url, map[string]interface{}{":query": name})
+	return g.projects(u, pg)
+}
 func (g *Client) AllVisibleProjects() (Projects, error) {
 	return g.allProjects(func(pg *Page) (interface{}, *Pagination, error) {
 		return g.VisibleProjects(pg)
@@ -181,7 +227,11 @@ func (g *Client) AllProjects() (Projects, error) {
 		return g.Projects(pg)
 	})
 }
-
+func (g *Client) SearchAll(name string) (Projects, error) {
+	return g.allProjects(func(pg *Page) (interface{}, *Pagination, error) {
+		return g.Search(name, pg)
+	})
+}
 func (g *Client) Project(id int) (*Project, error) {
 	var p Project
 	u := expandUrl(project_url, map[string]interface{}{":id": id})
@@ -192,19 +242,25 @@ func (g *Client) Project(id int) (*Project, error) {
 	return &p, nil
 }
 
-func (g *Client) Events(pid int, pg *Page) (Events, *Pagination, error) {
+func (g *Client) Events(id *int, nsname *string, pg *Page) (Events, *Pagination, error) {
+	if err := checkName(id, nsname); err != nil {
+		return nil, nil, err
+	}
 	var p Events
-	u := expandUrl(project_events_url, map[string]interface{}{":id": pid})
+	u := expandUrl(project_events_url, map[string]interface{}{":id": idname(id, nsname)})
 	pager, e := g.get(u, nil, pg, &p)
 	if e != nil {
 		return nil, nil, e
 	}
 	return p, pager, nil
 }
-func (g *Client) AllEvents(pid int) (Events, error) {
+func (g *Client) AllEvents(id *int, nsname *string) (Events, error) {
+	if err := checkName(id, nsname); err != nil {
+		return nil, err
+	}
 	var ev Events
 	err := fetchAll(func(pg *Page) (interface{}, *Pagination, error) {
-		return g.Events(pid, pg)
+		return g.Events(id, nsname, pg)
 	}, &ev)
 	if err != nil {
 		return nil, err
@@ -274,19 +330,9 @@ func (g *Client) AllTeamMembers(id *int, nsname *string, query *string) (Members
 	return p, nil
 }
 
-func idname(id *int, nam *string) string {
-	sid := ""
-	if id != nil {
-		sid = strconv.Itoa(*id)
-	} else {
-		sid = *nam
-	}
-	return sid
-}
-
 func (g *Client) TeamMembers(id *int, nsname *string, query *string, pg *Page) ([]Member, *Pagination, error) {
-	if id == nil && nsname == nil {
-		return nil, nil, InvalidParam.New("teamid or name must be given")
+	if err := checkName(id, nsname); err != nil {
+		return nil, nil, err
 	}
 
 	u := expandUrl(members_url, map[string]interface{}{":id": idname(id, nsname)})
@@ -310,8 +356,8 @@ func (g *Client) TeamMember(pid, uid int) (*Member, error) {
 }
 
 func (g *Client) AddTeamMember(id *int, nsname *string, uid int, level AccessLevel) (*Member, error) {
-	if id == nil && nsname == nil {
-		return nil, InvalidParam.New("projectid or name must be given")
+	if err := checkName(id, nsname); err != nil {
+		return nil, err
 	}
 	var p Member
 	u := expandUrl(members_url, map[string]interface{}{":id": idname(id, nsname)})
@@ -326,8 +372,8 @@ func (g *Client) AddTeamMember(id *int, nsname *string, uid int, level AccessLev
 }
 
 func (g *Client) EditTeamMember(id *int, nsname *string, uid int, level AccessLevel) (*Member, error) {
-	if id == nil && nsname == nil {
-		return nil, InvalidParam.New("projectid or name must be given")
+	if err := checkName(id, nsname); err != nil {
+		return nil, err
 	}
 	u := expandUrl(member_url, map[string]interface{}{":id": idname(id, nsname), ":user_id": uid})
 	var p Member
@@ -341,8 +387,8 @@ func (g *Client) EditTeamMember(id *int, nsname *string, uid int, level AccessLe
 }
 
 func (g *Client) DeleteTeamMember(id *int, nsname *string, uid int) (*Member, error) {
-	if id == nil && nsname == nil {
-		return nil, InvalidParam.New("projectid or name must be given")
+	if err := checkName(id, nsname); err != nil {
+		return nil, err
 	}
 	u := expandUrl(member_url, map[string]interface{}{":id": idname(id, nsname), ":user_id": uid})
 	var p Member
@@ -355,8 +401,8 @@ func (g *Client) DeleteTeamMember(id *int, nsname *string, uid int) (*Member, er
 
 func (g *Client) Hooks(id *int, nsname *string, pg *Page) ([]Hook, *Pagination, error) {
 	var p []Hook
-	if id == nil && nsname == nil {
-		return nil, nil, InvalidParam.New("projectid or name must be given")
+	if err := checkName(id, nsname); err != nil {
+		return nil, nil, err
 	}
 	u := expandUrl(hooks_url, map[string]interface{}{":id": idname(id, nsname)})
 	pager, e := g.get(u, nil, pg, &p)
@@ -367,8 +413,8 @@ func (g *Client) Hooks(id *int, nsname *string, pg *Page) ([]Hook, *Pagination, 
 }
 func (g *Client) AllHooks(id *int, nsname *string) ([]Hook, error) {
 	var h []Hook
-	if id == nil && nsname == nil {
-		return nil, InvalidParam.New("projectid or name must be given")
+	if err := checkName(id, nsname); err != nil {
+		return nil, err
 	}
 	err := fetchAll(func(pg *Page) (interface{}, *Pagination, error) {
 		return g.Hooks(id, nsname, pg)
@@ -377,4 +423,132 @@ func (g *Client) AllHooks(id *int, nsname *string) ([]Hook, error) {
 		return nil, err
 	}
 	return h, nil
+}
+
+func (g *Client) Hook(id *int, nsname *string, hid int) (*Hook, error) {
+	if err := checkName(id, nsname); err != nil {
+		return nil, err
+	}
+	var p Hook
+	u := expandUrl(hook_url, map[string]interface{}{":id": idname(id, nsname), ":hook_id": hid})
+	_, e := g.get(u, nil, nil, &p)
+	if e != nil {
+		return nil, e
+	}
+	return &p, nil
+}
+
+func (g *Client) AddHook(id *int, nsname *string, hurl string, push, iss, merge *bool) (*Hook, error) {
+	if err := checkName(id, nsname); err != nil {
+		return nil, err
+	}
+	var h Hook
+	u := expandUrl(hooks_url, map[string]interface{}{":id": idname(id, nsname)})
+	vals := make(url.Values)
+	vals.Set("url", hurl)
+	addBool(vals, "push_events", push)
+	addBool(vals, "issues_events", iss)
+	addBool(vals, "merge_requests_events", merge)
+	e := g.post(u, vals, &h)
+	if e != nil {
+		return nil, e
+	}
+	return &h, nil
+}
+
+func (g *Client) EditHook(id *int, nsname *string, hid int, hurl string, push, iss, merge *bool) (*Hook, error) {
+	if err := checkName(id, nsname); err != nil {
+		return nil, err
+	}
+	var h Hook
+	u := expandUrl(hook_url, map[string]interface{}{":id": idname(id, nsname), ":hook_id": hid})
+	vals := make(url.Values)
+	vals.Set("url", hurl)
+	addBool(vals, "push_events", push)
+	addBool(vals, "issues_events", iss)
+	addBool(vals, "merge_requests_events", merge)
+	e := g.put(u, vals, &h)
+	if e != nil {
+		return nil, e
+	}
+	return &h, nil
+}
+func (g *Client) DeleteHook(id *int, nsname *string, hid int) (*Hook, error) {
+	if err := checkName(id, nsname); err != nil {
+		return nil, err
+	}
+	u := expandUrl(hook_url, map[string]interface{}{":id": idname(id, nsname), ":hook_id": hid})
+	var h Hook
+	e := g.delete(u, nil, &h)
+	if e != nil {
+		return nil, e
+	}
+	return &h, nil
+}
+
+func (g *Client) Branches(id *int, nsname *string, pg *Page) ([]Branch, *Pagination, error) {
+	if err := checkName(id, nsname); err != nil {
+		return nil, nil, err
+	}
+	var r []Branch
+	u := expandUrl(branches_url, map[string]interface{}{":id": idname(id, nsname)})
+	pager, e := g.get(u, nil, pg, &r)
+	if e != nil {
+		return nil, nil, e
+	}
+	return r, pager, nil
+}
+func (g *Client) AllBranches(id *int, nsname *string) ([]Branch, error) {
+	if err := checkName(id, nsname); err != nil {
+		return nil, err
+	}
+	var b []Branch
+	err := fetchAll(func(pg *Page) (interface{}, *Pagination, error) {
+		return g.Branches(id, nsname, pg)
+	}, &b)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+func (g *Client) Branch(id *int, nsname *string, branch string) (*Branch, error) {
+	if err := checkName(id, nsname); err != nil {
+		return nil, err
+	}
+	var b Branch
+	u := expandUrl(branch_url, map[string]interface{}{":id": idname(id, nsname), ":branch": branch})
+	_, e := g.get(u, nil, nil, &b)
+	if e != nil {
+		return nil, e
+	}
+	return &b, nil
+}
+
+func (g *Client) protectBranch(id *int, nsname *string, branch string, command string) (*Branch, error) {
+	if err := checkName(id, nsname); err != nil {
+		return nil, err
+	}
+	var b Branch
+	u := expandUrl(branch_url, map[string]interface{}{":id": idname(id, nsname), ":branch": branch})
+	u = u + command
+	if e := g.put(u, nil, &b); e != nil {
+		return nil, e
+	}
+	return &b, nil
+}
+
+func (g *Client) ProtectBranch(id *int, nsname *string, branch string) (*Branch, error) {
+	return g.protectBranch(id, nsname, branch, "/protect")
+}
+func (g *Client) UnprotectBranch(id *int, nsname *string, branch string) (*Branch, error) {
+	return g.protectBranch(id, nsname, branch, "/unprotect")
+}
+
+func (g *Client) CreateFork(id int, forkedFrom int) error {
+	u := expandUrl(forkfrom_url, map[string]interface{}{":id": id, ":forked_from_id": forkedFrom})
+	return g.post(u, nil, nil)
+}
+func (g *Client) DeleteFork(id int) error {
+	u := expandUrl(fork_url, map[string]interface{}{":id": id})
+	return g.delete(u, nil, nil)
 }
