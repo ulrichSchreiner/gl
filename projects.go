@@ -120,7 +120,7 @@ type Commit struct {
 }
 type PersonData struct {
 	Name  string `json:"name,omitempty"`
-	Email string `json:"email,omitempty"`
+	EMail string `json:"email,omitempty"`
 }
 type Event struct {
 	ProjectId   int        `json:"project_id,omitempty"`
@@ -142,26 +142,6 @@ type Hook struct {
 	IssuesEvents        bool      `json:"issues_events,omitempty"`
 	MergeRequestsEvents bool      `json:"merge_requests_events,omitempty"`
 	CreatedAt           time.Time `json:"created_at, omitempty"`
-}
-
-type CommitParent struct {
-	Id string `json:"id,omitempty"`
-}
-type RepoCommit struct {
-	Id        string         `json:"id,omitempty"`
-	Message   string         `json:"message,omitempty"`
-	Tree      string         `json:"tree,omitempty"`
-	Author    *PersonData    `json:"author,omitempty"`
-	Committer *PersonData    `json:"committer,omitempty"`
-	Authored  time.Time      `json:"authored_date,omitempty"`
-	Committed time.Time      `json:"committed_date,omitempty"`
-	Parents   []CommitParent `json:"parents,omitempty"`
-}
-
-type Branch struct {
-	Name      string
-	Commit    *RepoCommit `json:"commit,omitempty"`
-	Protected bool        `json:"protected,omitempty"`
 }
 
 func idname(id *int, nam *string) string {
@@ -484,64 +464,6 @@ func (g *Client) DeleteHook(id *int, nsname *string, hid int) (*Hook, error) {
 		return nil, e
 	}
 	return &h, nil
-}
-
-func (g *Client) Branches(id *int, nsname *string, pg *Page) ([]Branch, *Pagination, error) {
-	if err := checkName(id, nsname); err != nil {
-		return nil, nil, err
-	}
-	var r []Branch
-	u := expandUrl(branches_url, map[string]interface{}{":id": idname(id, nsname)})
-	pager, e := g.get(u, nil, pg, &r)
-	if e != nil {
-		return nil, nil, e
-	}
-	return r, pager, nil
-}
-func (g *Client) AllBranches(id *int, nsname *string) ([]Branch, error) {
-	if err := checkName(id, nsname); err != nil {
-		return nil, err
-	}
-	var b []Branch
-	err := fetchAll(func(pg *Page) (interface{}, *Pagination, error) {
-		return g.Branches(id, nsname, pg)
-	}, &b)
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
-}
-func (g *Client) Branch(id *int, nsname *string, branch string) (*Branch, error) {
-	if err := checkName(id, nsname); err != nil {
-		return nil, err
-	}
-	var b Branch
-	u := expandUrl(branch_url, map[string]interface{}{":id": idname(id, nsname), ":branch": branch})
-	_, e := g.get(u, nil, nil, &b)
-	if e != nil {
-		return nil, e
-	}
-	return &b, nil
-}
-
-func (g *Client) protectBranch(id *int, nsname *string, branch string, command string) (*Branch, error) {
-	if err := checkName(id, nsname); err != nil {
-		return nil, err
-	}
-	var b Branch
-	u := expandUrl(branch_url, map[string]interface{}{":id": idname(id, nsname), ":branch": branch})
-	u = u + command
-	if e := g.put(u, nil, &b); e != nil {
-		return nil, e
-	}
-	return &b, nil
-}
-
-func (g *Client) ProtectBranch(id *int, nsname *string, branch string) (*Branch, error) {
-	return g.protectBranch(id, nsname, branch, "/protect")
-}
-func (g *Client) UnprotectBranch(id *int, nsname *string, branch string) (*Branch, error) {
-	return g.protectBranch(id, nsname, branch, "/unprotect")
 }
 
 func (g *Client) CreateFork(id int, forkedFrom int) error {
