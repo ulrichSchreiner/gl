@@ -185,7 +185,7 @@ func (g *Client) get(u string, params url.Values, pg *Page, target interface{}) 
 	return g.execute("GET", u, params, false, nil, pg, target)
 }
 func (g *Client) put(u string, params url.Values, target interface{}) error {
-	_, err := g.execute("PUT", u, params, false, nil, nil, target)
+	_, err := g.execute("PUT", u, params, true, nil, nil, target)
 	return err
 }
 func (g *Client) delete(u string, params url.Values, target interface{}) error {

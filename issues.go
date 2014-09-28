@@ -8,7 +8,7 @@ type IssueStateEvent string
 
 const (
 	CloseIssue  IssueStateEvent = "close"
-	ReopenIssue                 = "reopen"
+	ReopenIssue IssueStateEvent = "reopen"
 )
 
 const (

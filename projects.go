@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/spacemonkeygo/errors"
 	"net/url"
-	"strconv"
 	"time"
 )
 
@@ -94,14 +93,14 @@ type Project struct {
 type Projects []Project
 
 type EventData struct {
-	Before       string      `json:"before,omitempty"`
-	After        string      `json:"after,omitempty"`
-	Ref          string      `json:"ref,omitempty"`
-	UserId       int         `json:"user_id,omitempty"`
-	UserName     string      `json:"user_name,omitempty"`
-	Repository   *Repository `json:"repository,omitempty"`
-	Commits      []Commit    `json:"commits,omitempty"`
-	TotalCommits int         `json:"total_commits_count,omitempty"`
+	Before       string        `json:"before,omitempty"`
+	After        string        `json:"after,omitempty"`
+	Ref          string        `json:"ref,omitempty"`
+	UserId       int           `json:"user_id,omitempty"`
+	UserName     string        `json:"user_name,omitempty"`
+	Repository   *Repository   `json:"repository,omitempty"`
+	Commits      []EventCommit `json:"commits,omitempty"`
+	TotalCommits int           `json:"total_commits_count,omitempty"`
 }
 
 type Repository struct {
@@ -111,7 +110,7 @@ type Repository struct {
 	Homepage    string `json:"homepage,omitempty"`
 }
 
-type Commit struct {
+type EventCommit struct {
 	Id        string      `json:"id,omitempty"`
 	Message   string      `json:"message,omitempty"`
 	Timestamp time.Time   `json:"timestamp,omitempty"`
@@ -142,16 +141,6 @@ type Hook struct {
 	IssuesEvents        bool      `json:"issues_events,omitempty"`
 	MergeRequestsEvents bool      `json:"merge_requests_events,omitempty"`
 	CreatedAt           time.Time `json:"created_at, omitempty"`
-}
-
-func idname(id *int, nam *string) string {
-	sid := ""
-	if id != nil {
-		sid = strconv.Itoa(*id)
-	} else {
-		sid = *nam
-	}
-	return sid
 }
 
 func (g *Client) projects(purl string, pg *Page) (Projects, *Pagination, error) {
@@ -222,25 +211,19 @@ func (g *Client) Project(id int) (*Project, error) {
 	return &p, nil
 }
 
-func (g *Client) Events(id *int, nsname *string, pg *Page) (Events, *Pagination, error) {
-	if err := checkName(id, nsname); err != nil {
-		return nil, nil, err
-	}
+func (g *Client) Events(id string, pg *Page) (Events, *Pagination, error) {
 	var p Events
-	u := expandUrl(project_events_url, map[string]interface{}{":id": idname(id, nsname)})
+	u := expandUrl(project_events_url, map[string]interface{}{":id": id})
 	pager, e := g.get(u, nil, pg, &p)
 	if e != nil {
 		return nil, nil, e
 	}
 	return p, pager, nil
 }
-func (g *Client) AllEvents(id *int, nsname *string) (Events, error) {
-	if err := checkName(id, nsname); err != nil {
-		return nil, err
-	}
+func (g *Client) AllEvents(id string) (Events, error) {
 	var ev Events
 	err := fetchAll(func(pg *Page) (interface{}, *Pagination, error) {
-		return g.Events(id, nsname, pg)
+		return g.Events(id, pg)
 	}, &ev)
 	if err != nil {
 		return nil, err
@@ -299,10 +282,10 @@ func (g *Client) RemoveProject(id int) (*Project, error) {
 	return &p, nil
 }
 
-func (g *Client) AllTeamMembers(id *int, nsname *string, query *string) (Members, error) {
+func (g *Client) AllTeamMembers(id string, query *string) (Members, error) {
 	var p Members
 	err := fetchAll(func(pg *Page) (interface{}, *Pagination, error) {
-		return g.TeamMembers(id, nsname, query, pg)
+		return g.TeamMembers(id, query, pg)
 	}, &p)
 	if err != nil {
 		return nil, err
@@ -310,12 +293,8 @@ func (g *Client) AllTeamMembers(id *int, nsname *string, query *string) (Members
 	return p, nil
 }
 
-func (g *Client) TeamMembers(id *int, nsname *string, query *string, pg *Page) ([]Member, *Pagination, error) {
-	if err := checkName(id, nsname); err != nil {
-		return nil, nil, err
-	}
-
-	u := expandUrl(members_url, map[string]interface{}{":id": idname(id, nsname)})
+func (g *Client) TeamMembers(id string, query *string, pg *Page) ([]Member, *Pagination, error) {
+	u := expandUrl(members_url, map[string]interface{}{":id": id})
 	var p Members
 
 	pager, e := g.get(u, nil, nil, &p)
@@ -335,12 +314,9 @@ func (g *Client) TeamMember(pid, uid int) (*Member, error) {
 	return &p, nil
 }
 
-func (g *Client) AddTeamMember(id *int, nsname *string, uid int, level AccessLevel) (*Member, error) {
-	if err := checkName(id, nsname); err != nil {
-		return nil, err
-	}
+func (g *Client) AddTeamMember(id string, uid int, level AccessLevel) (*Member, error) {
 	var p Member
-	u := expandUrl(members_url, map[string]interface{}{":id": idname(id, nsname)})
+	u := expandUrl(members_url, map[string]interface{}{":id": id})
 	vals := make(url.Values)
 	vals.Set("access_level", fmt.Sprintf("%d", level))
 	vals.Set("user_id", fmt.Sprintf("%d", uid))
@@ -351,11 +327,8 @@ func (g *Client) AddTeamMember(id *int, nsname *string, uid int, level AccessLev
 	return &p, nil
 }
 
-func (g *Client) EditTeamMember(id *int, nsname *string, uid int, level AccessLevel) (*Member, error) {
-	if err := checkName(id, nsname); err != nil {
-		return nil, err
-	}
-	u := expandUrl(member_url, map[string]interface{}{":id": idname(id, nsname), ":user_id": uid})
+func (g *Client) EditTeamMember(id string, uid int, level AccessLevel) (*Member, error) {
+	u := expandUrl(member_url, map[string]interface{}{":id": id, ":user_id": uid})
 	var p Member
 	vals := make(url.Values)
 	vals.Set("access_level", fmt.Sprintf("%d", level))
@@ -366,11 +339,8 @@ func (g *Client) EditTeamMember(id *int, nsname *string, uid int, level AccessLe
 	return &p, nil
 }
 
-func (g *Client) DeleteTeamMember(id *int, nsname *string, uid int) (*Member, error) {
-	if err := checkName(id, nsname); err != nil {
-		return nil, err
-	}
-	u := expandUrl(member_url, map[string]interface{}{":id": idname(id, nsname), ":user_id": uid})
+func (g *Client) DeleteTeamMember(id string, uid int) (*Member, error) {
+	u := expandUrl(member_url, map[string]interface{}{":id": id, ":user_id": uid})
 	var p Member
 	e := g.delete(u, nil, &p)
 	if e != nil {
@@ -379,25 +349,19 @@ func (g *Client) DeleteTeamMember(id *int, nsname *string, uid int) (*Member, er
 	return &p, nil
 }
 
-func (g *Client) Hooks(id *int, nsname *string, pg *Page) ([]Hook, *Pagination, error) {
+func (g *Client) Hooks(id string, pg *Page) ([]Hook, *Pagination, error) {
 	var p []Hook
-	if err := checkName(id, nsname); err != nil {
-		return nil, nil, err
-	}
-	u := expandUrl(hooks_url, map[string]interface{}{":id": idname(id, nsname)})
+	u := expandUrl(hooks_url, map[string]interface{}{":id": id})
 	pager, e := g.get(u, nil, pg, &p)
 	if e != nil {
 		return nil, nil, e
 	}
 	return p, pager, nil
 }
-func (g *Client) AllHooks(id *int, nsname *string) ([]Hook, error) {
+func (g *Client) AllHooks(id string) ([]Hook, error) {
 	var h []Hook
-	if err := checkName(id, nsname); err != nil {
-		return nil, err
-	}
 	err := fetchAll(func(pg *Page) (interface{}, *Pagination, error) {
-		return g.Hooks(id, nsname, pg)
+		return g.Hooks(id, pg)
 	}, &h)
 	if err != nil {
 		return nil, err
@@ -405,12 +369,9 @@ func (g *Client) AllHooks(id *int, nsname *string) ([]Hook, error) {
 	return h, nil
 }
 
-func (g *Client) Hook(id *int, nsname *string, hid int) (*Hook, error) {
-	if err := checkName(id, nsname); err != nil {
-		return nil, err
-	}
+func (g *Client) Hook(id string, hid int) (*Hook, error) {
 	var p Hook
-	u := expandUrl(hook_url, map[string]interface{}{":id": idname(id, nsname), ":hook_id": hid})
+	u := expandUrl(hook_url, map[string]interface{}{":id": id, ":hook_id": hid})
 	_, e := g.get(u, nil, nil, &p)
 	if e != nil {
 		return nil, e
@@ -418,12 +379,9 @@ func (g *Client) Hook(id *int, nsname *string, hid int) (*Hook, error) {
 	return &p, nil
 }
 
-func (g *Client) AddHook(id *int, nsname *string, hurl string, push, iss, merge *bool) (*Hook, error) {
-	if err := checkName(id, nsname); err != nil {
-		return nil, err
-	}
+func (g *Client) AddHook(id string, hurl string, push, iss, merge *bool) (*Hook, error) {
 	var h Hook
-	u := expandUrl(hooks_url, map[string]interface{}{":id": idname(id, nsname)})
+	u := expandUrl(hooks_url, map[string]interface{}{":id": id})
 	vals := make(url.Values)
 	vals.Set("url", hurl)
 	addBool(vals, "push_events", push)
@@ -436,12 +394,9 @@ func (g *Client) AddHook(id *int, nsname *string, hurl string, push, iss, merge 
 	return &h, nil
 }
 
-func (g *Client) EditHook(id *int, nsname *string, hid int, hurl string, push, iss, merge *bool) (*Hook, error) {
-	if err := checkName(id, nsname); err != nil {
-		return nil, err
-	}
+func (g *Client) EditHook(id string, hid int, hurl string, push, iss, merge *bool) (*Hook, error) {
 	var h Hook
-	u := expandUrl(hook_url, map[string]interface{}{":id": idname(id, nsname), ":hook_id": hid})
+	u := expandUrl(hook_url, map[string]interface{}{":id": id, ":hook_id": hid})
 	vals := make(url.Values)
 	vals.Set("url", hurl)
 	addBool(vals, "push_events", push)
@@ -453,11 +408,8 @@ func (g *Client) EditHook(id *int, nsname *string, hid int, hurl string, push, i
 	}
 	return &h, nil
 }
-func (g *Client) DeleteHook(id *int, nsname *string, hid int) (*Hook, error) {
-	if err := checkName(id, nsname); err != nil {
-		return nil, err
-	}
-	u := expandUrl(hook_url, map[string]interface{}{":id": idname(id, nsname), ":hook_id": hid})
+func (g *Client) DeleteHook(id string, hid int) (*Hook, error) {
+	u := expandUrl(hook_url, map[string]interface{}{":id": id, ":hook_id": hid})
 	var h Hook
 	e := g.delete(u, nil, &h)
 	if e != nil {

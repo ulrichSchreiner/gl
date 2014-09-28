@@ -8,7 +8,7 @@ type MilestoneStateEvent string
 
 const (
 	MilestoneActivate MilestoneStateEvent = "activate"
-	MilestoneClose                        = "close"
+	MilestoneClose    MilestoneStateEvent = "close"
 )
 
 type Milestone struct {

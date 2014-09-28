@@ -10,19 +10,19 @@ type NotificationLevel int
 
 const (
 	Guest     AccessLevel = 10
-	Reporter              = 20
-	Developer             = 30
-	Master                = 40
-	Owner                 = 50
+	Reporter  AccessLevel = 20
+	Developer AccessLevel = 30
+	Master    AccessLevel = 40
+	Owner     AccessLevel = 50
 
 	Private  VisibilityLevel = 0
 	Internal VisibilityLevel = 10
 	Public   VisibilityLevel = 20
 
 	NotificationDisabled      NotificationLevel = 0
-	NotificationParticipating                   = 1
-	NotificationWatch                           = 2
-	NotificationGlobal                          = 3
+	NotificationParticipating NotificationLevel = 1
+	NotificationWatch         NotificationLevel = 2
+	NotificationGlobal        NotificationLevel = 3
 )
 
 const (

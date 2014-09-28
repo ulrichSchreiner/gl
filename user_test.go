@@ -11,7 +11,7 @@ func TestUsers(t *testing.T) {
 	Convey("Users functions", t, func() {
 		Convey("Search for users", func() {
 			name := "searchfor"
-			h := th(false, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return []User{User{}}, nil, 200
 			})
 			srv, cl := StubHandler(h)
@@ -24,7 +24,7 @@ func TestUsers(t *testing.T) {
 			})
 		})
 		Convey("List all users", func() {
-			h := th(false, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return []User{User{}}, nil, 200
 			})
 			srv, cl := StubHandler(h)
@@ -36,7 +36,7 @@ func TestUsers(t *testing.T) {
 			})
 		})
 		Convey("Get a single user", func() {
-			h := th(false, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return &User{}, nil, 200
 			})
 			srv, cl := StubHandler(h)
@@ -48,7 +48,7 @@ func TestUsers(t *testing.T) {
 			})
 		})
 		Convey("Get current user", func() {
-			h := th(false, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return &User{}, nil, 200
 			})
 			srv, cl := StubHandler(h)
@@ -60,7 +60,7 @@ func TestUsers(t *testing.T) {
 			})
 		})
 		Convey("Create a user", func() {
-			h := th(true, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return &User{}, nil, 200
 			})
 			srv, cl := StubHandler(h)
@@ -92,7 +92,7 @@ func TestUsers(t *testing.T) {
 			})
 		})
 		Convey("Edit a user", func() {
-			h := th(false, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return &User{}, nil, 200
 			})
 			srv, cl := StubHandler(h)
@@ -124,7 +124,7 @@ func TestUsers(t *testing.T) {
 			})
 		})
 		Convey("Delete a user", func() {
-			h := th(false, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return &User{}, nil, 200
 			})
 			srv, cl := StubHandler(h)
@@ -136,7 +136,7 @@ func TestUsers(t *testing.T) {
 			})
 		})
 		Convey("Create a session", func() {
-			h := th(true, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return &User{}, nil, 200
 			})
 			srv, cl := StubHandler(h)
@@ -153,7 +153,7 @@ func TestUsers(t *testing.T) {
 	})
 	Convey("sshkey functions", t, func() {
 		Convey("list ssh keys of current user", func() {
-			h := th(false, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return []SshKey{SshKey{}}, nil, 200
 			})
 			srv, cl := StubHandler(h)
@@ -165,7 +165,7 @@ func TestUsers(t *testing.T) {
 			})
 		})
 		Convey("get a key of current user", func() {
-			h := th(false, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return []SshKey{SshKey{}}, nil, 200
 			})
 			srv, cl := StubHandler(h)
@@ -177,7 +177,7 @@ func TestUsers(t *testing.T) {
 			})
 		})
 		Convey("add a key of current user", func() {
-			h := th(true, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return &SshKey{}, nil, 200
 			})
 			srv, cl := StubHandler(h)
@@ -191,7 +191,7 @@ func TestUsers(t *testing.T) {
 			})
 		})
 		Convey("del a key of current user", func() {
-			h := th(false, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return &SshKey{}, nil, 200
 			})
 			srv, cl := StubHandler(h)

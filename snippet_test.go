@@ -9,37 +9,37 @@ import (
 func TestSnippets(t *testing.T) {
 	Convey("Snippets functions", t, func() {
 		Convey("List all snippets", func() {
-			h := th(false, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return []Snippet{Snippet{}}, nil, 200
 			})
 			srv, cl := StubHandler(h)
 			defer srv.Close()
-			cl.AllSnippets(1)
+			cl.AllSnippets("1")
 			Convey("check if the request was correct", func() {
 				So(h.method, ShouldEqual, "GET")
-				So(h.path, ShouldEqual, snippets_url)
+				So(h.path, ShouldEqual, "/projects/1/snippets")
 			})
 		})
 		Convey("Get a single snippet", func() {
-			h := th(false, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return &Snippet{}, nil, 200
 			})
 			srv, cl := StubHandler(h)
 			defer srv.Close()
-			cl.GetSnippet(1, 2)
+			cl.GetSnippet("1", 2)
 			Convey("check if the request was correct", func() {
 				So(h.method, ShouldEqual, "GET")
 				So(h.path, ShouldEqual, "/projects/1/snippets/2")
 			})
 		})
 		Convey("Create a snippet", func() {
-			h := th(true, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return &Snippet{}, nil, 200
 			})
 			srv, cl := StubHandler(h)
 			defer srv.Close()
 			title, filename, code := "title", "filename", "code"
-			cl.CreateSnippet(1, title, filename, code)
+			cl.CreateSnippet("1", title, filename, code)
 			Convey("check if the request was correct", func() {
 				So(h.method, ShouldEqual, "POST")
 				So(h.path, ShouldEqual, "/projects/1/snippets")
@@ -49,13 +49,13 @@ func TestSnippets(t *testing.T) {
 			})
 		})
 		Convey("Edit a Snippet", func() {
-			h := th(false, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return &Snippet{}, nil, 200
 			})
 			srv, cl := StubHandler(h)
 			defer srv.Close()
 			title, filename, code := "title", "filename", "code"
-			cl.EditSnippet(1, 2, &title, &filename, &code)
+			cl.EditSnippet("1", 2, &title, &filename, &code)
 			Convey("check if the request was correct", func() {
 				So(h.method, ShouldEqual, "PUT")
 				So(h.path, ShouldEqual, "/projects/1/snippets/2")
@@ -65,12 +65,12 @@ func TestSnippets(t *testing.T) {
 			})
 		})
 		Convey("Delete a snippet", func() {
-			h := th(false, func(v url.Values) (interface{}, error, int) {
+			h := th(func(v url.Values) (interface{}, error, int) {
 				return &Snippet{}, nil, 200
 			})
 			srv, cl := StubHandler(h)
 			defer srv.Close()
-			cl.DeleteSnippet(1, 2)
+			cl.DeleteSnippet("1", 2)
 			Convey("check if the request was correct", func() {
 				So(h.method, ShouldEqual, "DELETE")
 				So(h.path, ShouldEqual, "/projects/1/snippets/2")

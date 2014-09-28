@@ -30,17 +30,18 @@ type Snippet struct {
 	Author   *SnippetAuthor `json:"author,omitempty"`
 }
 
-func (g *Client) Snippets(pid int, pg *Page) ([]Snippet, *Pagination, error) {
+func (g *Client) Snippets(id string, pg *Page) ([]Snippet, *Pagination, error) {
 	var r []Snippet
 	parm := make(url.Values)
-	pager, e := g.get(snippets_url, parm, pg, &r)
+	u := expandUrl(snippets_url, map[string]interface{}{":id": id})
+	pager, e := g.get(u, parm, pg, &r)
 	if e != nil {
 		return nil, nil, e
 	}
 	return r, pager, nil
 }
 
-func (g *Client) AllSnippets(pid int) ([]Snippet, error) {
+func (g *Client) AllSnippets(pid string) ([]Snippet, error) {
 	var r []Snippet
 	err := fetchAll(func(pg *Page) (interface{}, *Pagination, error) {
 		return g.Snippets(pid, pg)
@@ -51,7 +52,7 @@ func (g *Client) AllSnippets(pid int) ([]Snippet, error) {
 	return r, nil
 }
 
-func (g *Client) GetSnippet(pid, snipid int) (*Snippet, error) {
+func (g *Client) GetSnippet(pid string, snipid int) (*Snippet, error) {
 	var s Snippet
 	u := expandUrl(snippet_url, map[string]interface{}{":id": pid, ":snippet_id": snipid})
 	_, e := g.get(u, nil, nil, &s)
@@ -61,7 +62,7 @@ func (g *Client) GetSnippet(pid, snipid int) (*Snippet, error) {
 	return &s, nil
 }
 
-func (g *Client) CreateSnippet(id int, title, filename, code string) (*Snippet, error) {
+func (g *Client) CreateSnippet(id string, title, filename, code string) (*Snippet, error) {
 	u := expandUrl(snippets_url, map[string]interface{}{":id": id})
 	var s Snippet
 	vals := make(url.Values)
@@ -75,7 +76,7 @@ func (g *Client) CreateSnippet(id int, title, filename, code string) (*Snippet, 
 	return &s, nil
 }
 
-func (g *Client) EditSnippet(id, snipid int, title, filename, code *string) (*Snippet, error) {
+func (g *Client) EditSnippet(id string, snipid int, title, filename, code *string) (*Snippet, error) {
 	u := expandUrl(snippet_url, map[string]interface{}{":id": id, ":snippet_id": snipid})
 	var s Snippet
 	vals := make(url.Values)
@@ -89,7 +90,7 @@ func (g *Client) EditSnippet(id, snipid int, title, filename, code *string) (*Sn
 	return &s, nil
 }
 
-func (g *Client) DeleteSnippet(id, snipid int) (*Snippet, error) {
+func (g *Client) DeleteSnippet(id string, snipid int) (*Snippet, error) {
 	u := expandUrl(snippet_url, map[string]interface{}{":id": id, ":snippet_id": snipid})
 	var s Snippet
 	e := g.delete(u, nil, &s)
@@ -98,7 +99,7 @@ func (g *Client) DeleteSnippet(id, snipid int) (*Snippet, error) {
 	}
 	return &s, nil
 }
-func (g *Client) SnippetContent(id, snipid int) ([]byte, error) {
+func (g *Client) SnippetContent(id string, snipid int) ([]byte, error) {
 	u := expandUrl(snippet_content, map[string]interface{}{":id": id, ":snippet_id": snipid})
 	buf, _, err := g.httpexecute("GET", u, nil, false, nil, nil)
 	if err != nil {

@@ -12,11 +12,11 @@ import (
 type stub func(url.Values) (interface{}, error, int)
 
 type testrq struct {
-	method     string
-	path       string
-	values     url.Values
-	parmasbody bool
-	h          stub
+	method string
+	path   string
+	values url.Values
+	h      stub
+	encode bool
 }
 
 func (rq *testrq) get(k string) string {
@@ -25,7 +25,7 @@ func (rq *testrq) get(k string) string {
 func (rq *testrq) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	b, _ := ioutil.ReadAll(r.Body)
 	var v url.Values
-	if rq.parmasbody {
+	if r.Method == "POST" || r.Method == "PUT" {
 		v, _ = url.ParseQuery(string(b))
 	} else {
 		v = r.URL.Query()
@@ -38,12 +38,25 @@ func (rq *testrq) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), code)
 	}
 	if res != nil {
-		json.NewEncoder(w).Encode(res)
+		if rq.encode {
+			json.NewEncoder(w).Encode(res)
+		} else {
+			arb, ok := res.([]byte)
+			if ok {
+				w.Write(arb)
+			}
+		}
 	}
 }
 
-func th(bodyparm bool, s stub) *testrq {
-	return &testrq{method: "", path: "", parmasbody: bodyparm, h: s}
+// testhandler
+func th(s stub) *testrq {
+	return &testrq{method: "", path: "", h: s, encode: true}
+}
+
+// testhandler plain result
+func thp(s stub) *testrq {
+	return &testrq{method: "", path: "", h: s, encode: false}
 }
 
 func StubHandler(rq *testrq) (*httptest.Server, *Client) {
