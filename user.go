@@ -16,20 +16,26 @@ const (
 )
 
 type User struct {
-	Id            int    `json:"id,omitempty"`
-	Username      string `json:"username,omitempty"`
-	Email         string `json:"email,omitempty"`
-	Name          string `json:"name,omitempty"`
-	State         string `json:"state,omitempty"`
-	CreatedAt     string `json:"created_at,omitempty"`
-	Bio           string `json:"bio,omitempty"`
-	Skype         string `json:"skype,omitempty"`
-	LinkedIn      string `json:"linkedin,omitempty"`
-	Twitter       string `json:"twitter,omitempty"`
-	ExternUid     string `json:"extern_uid,omitempty"`
-	Provider      string `json:"provider,omitempty"`
-	ThemeId       int    `json:"theme_id,omitempty"`
-	ColorSchemeId int    `json:"color_scheme_id,color_scheme_id"`
+	Id               int    `json:"id,omitempty"`
+	Username         string `json:"username,omitempty"`
+	Email            string `json:"email,omitempty"`
+	Name             string `json:"name,omitempty"`
+	State            string `json:"state,omitempty"`
+	CreatedAt        string `json:"created_at,omitempty"`
+	Bio              string `json:"bio,omitempty"`
+	Skype            string `json:"skype,omitempty"`
+	LinkedIn         string `json:"linkedin,omitempty"`
+	Twitter          string `json:"twitter,omitempty"`
+	ExternUid        string `json:"extern_uid,omitempty"`
+	Provider         string `json:"provider,omitempty"`
+	ThemeId          int    `json:"theme_id,omitempty"`
+	ColorSchemeId    int    `json:"color_scheme_id,omitempty"`
+	PrivateToken     string `json:"private_token,omitempty"`
+	Blocked          bool   `json:"blocked,omitempty"`
+	IsAdmin          bool   `json:"is_admin,omitempty"`
+	CanCreateGroup   bool   `json:"can_create_group,omitempty"`
+	CanCreateTeam    bool   `json:"can_create_team,omitempty"`
+	CanCreateProject bool   `json:"can_create_project,omitempty"`
 }
 
 type SshKey struct {
@@ -239,11 +245,11 @@ func (g *Client) DeleteUserKey(uid, kid int) (*SshKey, error) {
 	}
 	return &us, nil
 }
-func (g *Client) Session(login, email, password string) (*User, error) {
+func (g *Client) Session(login string, email *string, password string) (*User, error) {
 	var u User
 	vals := make(url.Values)
 	vals.Set("login", login)
-	vals.Set("email", email)
+	addString(vals, "email", email)
 	vals.Set("password", password)
 	e := g.post(session_url, vals, &u)
 	if e != nil {

@@ -141,7 +141,8 @@ func TestUsers(t *testing.T) {
 			})
 			srv, cl := StubHandler(h)
 			defer srv.Close()
-			cl.Session("login", "email", "pass")
+			em := "email"
+			cl.Session("login", &em, "pass")
 			Convey("check if the request was correct", func() {
 				So(h.method, ShouldEqual, "POST")
 				So(h.path, ShouldEqual, "/session")
