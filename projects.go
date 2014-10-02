@@ -30,7 +30,7 @@ type MemberState string
 var InvalidParam = errors.NewClass("invalid parameter")
 
 const (
-	MemberActive MemberState = "active"
+	MemberActive = MemberState("active")
 )
 
 type Permission struct {

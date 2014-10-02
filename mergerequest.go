@@ -9,13 +9,13 @@ type MergeState string
 type MergeOrderBy string
 
 const (
-	AllMerges    MergeState = "all"
-	OpenedMerges MergeState = "opened"
-	ClosedMerges MergeState = "closed"
-	MergedMerges MergeState = "merged"
+	AllMerges    = MergeState("all")
+	OpenedMerges = MergeState("opened")
+	ClosedMerges = MergeState("closed")
+	MergedMerges = MergeState("merged")
 
-	OrderByCreated MergeOrderBy = "created_at"
-	OrderByUpdated MergeOrderBy = "updated_at"
+	OrderByCreated = MergeOrderBy("created_at")
+	OrderByUpdated = MergeOrderBy("updated_at")
 )
 
 const (

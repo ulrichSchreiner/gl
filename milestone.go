@@ -7,8 +7,8 @@ import (
 type MilestoneStateEvent string
 
 const (
-	MilestoneActivate MilestoneStateEvent = "activate"
-	MilestoneClose    MilestoneStateEvent = "close"
+	MilestoneActivate = MilestoneStateEvent("activate")
+	MilestoneClose    = MilestoneStateEvent("close")
 )
 
 type Milestone struct {

@@ -7,8 +7,8 @@ import (
 type IssueStateEvent string
 
 const (
-	CloseIssue  IssueStateEvent = "close"
-	ReopenIssue IssueStateEvent = "reopen"
+	CloseIssue  = IssueStateEvent("close")
+	ReopenIssue = IssueStateEvent("reopen")
 )
 
 const (
