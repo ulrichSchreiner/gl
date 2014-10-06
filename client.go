@@ -114,7 +114,7 @@ func (g *Client) httpexecute(method, u string, params url.Values, paramInbody bo
 	var req *http.Request
 	var err error
 
-	newurl := g.hostURL
+	newurl := *g.hostURL
 
 	parms := url.Values(make(map[string][]string))
 	if !paramInbody && params != nil && len(params) > 0 {
@@ -128,7 +128,7 @@ func (g *Client) httpexecute(method, u string, params url.Values, paramInbody bo
 	parms.Set("page", strconv.Itoa(pg.Page))
 	parms.Set("per_page", strconv.Itoa(pg.PerPage))
 	newurl.RawQuery = parms.Encode()
-	newurl.Path = g.apiPath + u
+	newurl.Opaque = "//" + g.hostURL.Host + g.apiPath + u
 
 	// if no body is given but the params should be in the body
 	// overwrite the body value
@@ -141,6 +141,8 @@ func (g *Client) httpexecute(method, u string, params url.Values, paramInbody bo
 	} else {
 		req, err = http.NewRequest(method, newurl.String(), nil)
 	}
+	req.URL.Opaque = newurl.Opaque
+	req.URL.Path = ""
 	if err != nil {
 		return nil, nil, unknownError.Wrap(err)
 	}
