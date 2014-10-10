@@ -26,7 +26,7 @@ var TESTPROJECT = gl.Project{
 
 func checkErrorCondition(t *testing.T, cond bool, msg string, parm ...interface{}) {
 	if cond {
-		t.Errorf(msg, parm)
+		t.Fatalf(msg, parm)
 	}
 }
 
@@ -81,8 +81,8 @@ func TestGitlab(t *testing.T) {
 	checkErrorCondition(t, e != nil, "cannot open root session")
 	git := gitlab.Child()
 	git.Token(usr.PrivateToken)
-	projects := createProjects(t, git, TESTPROJECT, 10)
-	listAllProjects(t, git, 10)
+	projects := createProjects(t, git, TESTPROJECT, 5)
+	listAllProjects(t, git, 5)
 	removeProjectsWithId(t, git, projects)
 }
 

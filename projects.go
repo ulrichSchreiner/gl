@@ -161,13 +161,6 @@ func (g *Client) allProjects(f fetchFunc) (Projects, error) {
 	return p, nil
 }
 
-func checkName(id *int, nsname *string) error {
-	if id == nil && nsname == nil {
-		return InvalidParam.New("projectid or name must be given")
-	}
-	return nil
-}
-
 func (g *Client) VisibleProjects(pg *Page) (Projects, *Pagination, error) {
 	return g.projects(projects_url, pg)
 }
@@ -201,7 +194,7 @@ func (g *Client) SearchAll(name string) (Projects, error) {
 		return g.Search(name, pg)
 	})
 }
-func (g *Client) Project(id int) (*Project, error) {
+func (g *Client) Project(id string) (*Project, error) {
 	var p Project
 	u := expandUrl(project_url, map[string]interface{}{":id": id})
 	_, e := g.get(u, nil, nil, &p)

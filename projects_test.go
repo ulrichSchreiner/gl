@@ -120,7 +120,6 @@ func TestProjects(t *testing.T) {
 		})
 
 		Convey("removing a given project", func() {
-			pid := 54
 			h := th(func(v url.Values) (interface{}, error, int) {
 				var p Project
 				p.Name = "to be deleted"
@@ -128,7 +127,7 @@ func TestProjects(t *testing.T) {
 			})
 			srv, cl := StubHandler(h)
 			defer srv.Close()
-			cl.RemoveProject(pid)
+			cl.RemoveProject(54)
 			Convey("should invoke a DELETE on the correct url", func() {
 				So(h.method, ShouldEqual, "DELETE")
 				So(h.path, ShouldEqual, "/projects/54")
