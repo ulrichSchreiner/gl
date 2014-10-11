@@ -6,6 +6,7 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/ulrichSchreiner/gl"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
 )
@@ -81,8 +82,13 @@ func TestGitlab(t *testing.T) {
 	checkErrorCondition(t, e != nil, "cannot open root session")
 	git := gitlab.Child()
 	git.Token(usr.PrivateToken)
-	projects := createProjects(t, git, TESTPROJECT, 5)
-	listAllProjects(t, git, 5)
+	projects := createProjects(t, git, TESTPROJECT, 20)
+	listAllProjects(t, git, 20)
+	fetchSingleProject(t, git, "root", "testproject_0_1_2_3")
+	fetchProjectsPaged(t, git, 5, 20)
+
+	testUsersAndMembers(t, git, projects[0])
+
 	removeProjectsWithId(t, git, projects)
 }
 
@@ -95,10 +101,30 @@ func listAllProjects(t *testing.T, g *gl.Client, numExp int) {
 func removeProjectsWithId(t *testing.T, git *gl.Client, prjs []gl.Project) {
 	t.Logf("Removing Projects from Gitlab with their ID's")
 	for _, p := range prjs {
-		t.Logf("Removing '%s' with id '%d'", p.Name, p.Id)
 		rmp, e := git.RemoveProject(p.Id)
 		checkErrorCondition(t, e != nil, "cannot remove project '%s'", p.Name)
 		checkProject(t, &p, rmp, false)
+	}
+}
+
+func fetchSingleProject(t *testing.T, git *gl.Client, ns, name string) {
+	pname := url.QueryEscape(fmt.Sprintf("%s/%s", ns, name))
+	_, err := git.Project(pname)
+	checkErrorCondition(t, err != nil, "cannot fetch project %s/%s: %s", ns, pname, err)
+}
+
+func fetchProjectsPaged(t *testing.T, git *gl.Client, pg, all int) {
+	page := gl.Page{Page: 0, PerPage: pg}
+	fetched := 0
+	for {
+		prj, pag, err := git.Projects(&page)
+		checkErrorCondition(t, err != nil, "cannot fetch projects with page: %d: %s", page.Page, err)
+		checkErrorCondition(t, len(prj) != page.PerPage, "returned projects differ from Pagecount %d <> %d", len(prj), page.PerPage)
+		fetched += page.PerPage
+		if fetched >= all {
+			break
+		}
+		page = *pag.NextPage
 	}
 }
 
@@ -107,7 +133,6 @@ func createProjects(t *testing.T, git *gl.Client, templ gl.Project, num int) []g
 	t.Logf("Create %d projects in gitlab", num)
 	for i := 0; i < num; i++ {
 		templ.Name = fmt.Sprintf("%s_%d", templ.Name, i)
-		t.Logf("Creating %s ...", templ.Name)
 		pr, e := git.CreateProject(
 			templ.Name, nil, nil,
 			&templ.Description,
