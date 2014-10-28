@@ -82,3 +82,18 @@ func (g *Client) GetMergeRequest(pid string, mrid int) (*MergeRequest, error) {
 	}
 	return &s, nil
 }
+
+func (g *Client) CreateMergeRequest(pid string, sbranch, tbranch string, assigne *int, title string, targetproject *int) (*MergeRequest, error) {
+	vals := make(url.Values)
+	vals.Set("source_branch", sbranch)
+	vals.Set("target_branch", tbranch)
+	addInt(vals, "assignee_id", assigne)
+	vals.Set("title", title)
+	addInt(vals, "target_project_id", targetproject)
+
+	u := expandUrl(mergerequest_url, map[string]interface{}{":id": pid})
+
+	var m MergeRequest
+	err := g.post(u, vals, &m)
+	return &m, err
+}
