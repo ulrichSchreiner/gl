@@ -7,6 +7,7 @@ import (
 type AccessLevel int
 type VisibilityLevel int
 type NotificationLevel int
+type State string
 
 const (
 	Guest     = AccessLevel(10)
@@ -23,6 +24,9 @@ const (
 	NotificationParticipating = NotificationLevel(1)
 	NotificationWatch         = NotificationLevel(2)
 	NotificationGlobal        = NotificationLevel(3)
+
+	Active  State = "active"
+	Blocked       = "blocked"
 )
 
 const (

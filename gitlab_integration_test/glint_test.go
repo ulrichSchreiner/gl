@@ -78,7 +78,7 @@ func TestGitlab(t *testing.T) {
 	checkErrorCondition(t, e != nil, "cannot start gitlab server")
 	gitlab, e := gl.OpenV3(gitlabURL)
 	checkErrorCondition(t, e != nil, "cannot open gitlabV3 API url")
-	usr, e := gitlab.Session("root", nil, "5iveL!fe")
+	usr, e := gitlab.Session("root", nil, "start123")
 	checkErrorCondition(t, e != nil, "cannot open root session")
 	git := gitlab.Child()
 	git.Token(usr.PrivateToken)
@@ -88,6 +88,7 @@ func TestGitlab(t *testing.T) {
 	fetchProjectsPaged(t, git, 5, 20)
 
 	testUsersAndMembers(t, git, projects[0])
+	testGroups(t, git, projects[0])
 
 	removeProjectsWithId(t, git, projects)
 }

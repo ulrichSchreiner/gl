@@ -20,7 +20,7 @@ type User struct {
 	Username         string `json:"username,omitempty"`
 	Email            string `json:"email,omitempty"`
 	Name             string `json:"name,omitempty"`
-	State            string `json:"state,omitempty"`
+	State            State  `json:"state,omitempty"`
 	CreatedAt        string `json:"created_at,omitempty"`
 	Bio              string `json:"bio,omitempty"`
 	Skype            string `json:"skype,omitempty"`
