@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/ulrichSchreiner/gl"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"testing"
 	"time"
 )
@@ -14,6 +16,7 @@ import (
 // run this tests with: go test -short=false
 
 var endpoint = flag.String("socket", "unix:///var/run/docker.sock", "the docker socket to use")
+var testLog = log.New(os.Stdout, "TEST", log.LstdFlags)
 
 var TESTPROJECT = gl.Project{
 	Name:                 "testproject",
@@ -27,7 +30,11 @@ var TESTPROJECT = gl.Project{
 
 func checkErrorCondition(t *testing.T, cond bool, msg string, parm ...interface{}) {
 	if cond {
-		t.Fatalf(msg, parm)
+		if len(parm) == 0 {
+			t.Fatal(msg)
+		} else {
+			t.Fatalf(msg, parm)
+		}
 	}
 }
 
@@ -65,12 +72,12 @@ func TestGitlab(t *testing.T) {
 	cnt, e = client.InspectContainer(cnt.ID)
 	checkErrorCondition(t, e != nil, "cannot inspect docker container")
 
-	rm := docker.RemoveContainerOptions{
+	/*rm := docker.RemoveContainerOptions{
 		ID:            cnt.ID,
 		RemoveVolumes: true,
 		Force:         true,
 	}
-	defer client.RemoveContainer(rm)
+	defer client.RemoveContainer(rm)*/
 
 	gitlabURL := "http://" + cnt.NetworkSettings.IPAddress + ":8080"
 	//fmt.Printf("%#v\n", cnt.NetworkSettings)
@@ -88,7 +95,7 @@ func TestGitlab(t *testing.T) {
 	fetchProjectsPaged(t, git, 5, 20)
 
 	testUsersAndMembers(t, git, projects[0])
-	testGroups(t, git, projects[0])
+	testGroups(t, git)
 
 	removeProjectsWithId(t, git, projects)
 }

@@ -116,9 +116,7 @@ func (g *Client) AddGroupMember(gid, uid int, level AccessLevel) (*GroupMember, 
 	return &gr, e
 }
 
-func (g *Client) DeleteGroupMember(gid, uid int) (*GroupMember, error) {
-	u := expandUrl(projectgroup_url, map[string]interface{}{":id": gid, ":user_id": uid})
-	var gr GroupMember
-	e := g.delete(u, nil, &gr)
-	return &gr, e
+func (g *Client) DeleteGroupMember(gid, uid int) error {
+	u := expandUrl(groupmember_url, map[string]interface{}{":id": gid, ":user_id": uid})
+	return g.delete(u, nil, nil)
 }

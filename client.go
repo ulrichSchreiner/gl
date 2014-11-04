@@ -8,6 +8,7 @@ import (
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/errhttp"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -52,6 +53,7 @@ type Client struct {
 	params  url.Values
 	apiPath string
 	client  *http.Client
+	log     *log.Logger
 }
 
 // Opens a connection to a gitlab server with the v3 api path.
@@ -109,6 +111,10 @@ func (c *Client) Sudo(uid string) {
 	c.sudo = &id
 }
 
+func (c *Client) SetLogger(l *log.Logger) {
+	c.log = l
+}
+
 func (g *Client) httpexecute(method, u string, params url.Values, paramInbody bool, body []byte, pg *Page) ([]byte, *Pagination, error) {
 
 	var req *http.Request
@@ -164,6 +170,9 @@ func (g *Client) httpexecute(method, u string, params url.Values, paramInbody bo
 
 	if resp.StatusCode >= 400 {
 		msg := fmt.Sprintf("%s (%d)", req.URL.String(), resp.StatusCode)
+		if g.log != nil {
+			g.log.Printf("%s %s -> %d: %s", method, req.URL.String(), resp.StatusCode, strings.TrimSpace(string(contents)))
+		}
 		return nil, nil, gitlabError.NewWith(msg, errhttp.SetStatusCode(resp.StatusCode), errhttp.OverrideErrorBody(strings.TrimSpace(string(contents))))
 	}
 	return contents, p, nil
@@ -173,6 +182,9 @@ func (g *Client) execute(method, u string, params url.Values, paramInbody bool, 
 	buf, pag, err := g.httpexecute(method, u, params, paramInbody, body, pg)
 	if err != nil {
 		return nil, err
+	}
+	if g.log != nil {
+		g.log.Printf("%s %s [%+v], buf = %s}\n", method, u, params, string(buf))
 	}
 	if target != nil {
 		err = json.Unmarshal(buf, target)

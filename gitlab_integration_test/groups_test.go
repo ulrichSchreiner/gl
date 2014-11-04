@@ -10,9 +10,22 @@ const (
 	numGroups = 5
 )
 
-func testGroups(t *testing.T, git *gl.Client, p gl.Project) {
+func testGroups(t *testing.T, git *gl.Client) {
+	u, e := git.CreateUser("test@example.com", "username", "start123", "myname", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	checkErrorCondition(t, e != nil, "cannot create user 'username': '%s'", e)
+	u, e = git.EditUser(u.Id, "test@example.com", "username", "start123", "myname", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	checkErrorCondition(t, e != nil, "cannot edit user 'username': '%s'", e)
+
 	groups := createGroups(t, git)
-	t.Logf("Groups: %#v", groups)
+	readGroups(t, git, groups)
+	testGroupMember(t, git, groups[0], u)
+	//testTransfer(t, git, u)
+}
+
+func readGroups(t *testing.T, git *gl.Client, grps gl.Groups) {
+	gr, e := git.AllGroups()
+	checkErrorCondition(t, e != nil, "cannot read all groups: %s", e)
+	checkErrorCondition(t, len(gr) != len(grps), "the groups differ from the expected groups")
 }
 
 func createGroups(t *testing.T, git *gl.Client) gl.Groups {
@@ -25,4 +38,45 @@ func createGroups(t *testing.T, git *gl.Client) gl.Groups {
 		res = append(res, *g)
 	}
 	return res
+}
+
+func testGroupMember(t *testing.T, git *gl.Client, g gl.Group, u *gl.User) {
+	gm, e := git.AddGroupMember(g.Id, u.Id, gl.Master)
+	checkErrorCondition(t, e != nil, "cannot add group member: %s", e)
+	checkErrorCondition(t, gm.Name != "myname", "email differs: %s", gm.Email)
+	checkErrorCondition(t, gm.Username != "username", "username differs: %s", gm.Username)
+	gms, e := git.AllGroupMembers(g.Id)
+	checkErrorCondition(t, e != nil, "cannot query all group members: %s", e)
+	checkErrorCondition(t, len(gms) != 1, "there must be exact one group member")
+	checkErrorCondition(t, gm.Name != gms[0].Name, "email differs: %s", gm.Email)
+	checkErrorCondition(t, gm.Username != gms[0].Username, "username differs: %s", gm.Username)
+
+	e = git.DeleteGroupMember(g.Id, u.Id)
+	checkErrorCondition(t, e != nil, "cannot delete group member: %s", e)
+}
+
+func testTransfer(t *testing.T, git *gl.Client, u *gl.User) {
+	tp := TESTPROJECT
+	pr, e := git.CreateUserProject(
+		"testuserproject", u.Id,
+		&tp.Description,
+		&tp.DefaultBranch,
+		&tp.IssuesEnabled,
+		&tp.MergeRequestsEnabled,
+		&tp.WikiEnabled,
+		&tp.SnippetsEnabled,
+		&tp.Public,
+		nil, nil)
+	checkErrorCondition(t, e != nil, "cannot create project: '%s'", e)
+
+	g, e := git.AddGroup("testgroup", "testpath")
+	checkErrorCondition(t, e != nil, "cannot create group: %s", e)
+
+	git.AddGroupMember(g.Id, u.Id, gl.Owner)
+	git.SetLogger(testLog)
+	//git2 := git.Child()
+	//git2.Sudo(u.Username)
+	g, e = git.TransferProjectToGroup(g.Id, pr.Id)
+	checkErrorCondition(t, e != nil, "cannot transfer project to group: %s", e)
+	t.Logf("g = %+v", g)
 }
