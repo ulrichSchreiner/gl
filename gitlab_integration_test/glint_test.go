@@ -16,6 +16,8 @@ import (
 // run this tests with: go test -short=false
 
 var endpoint = flag.String("socket", "unix:///var/run/docker.sock", "the docker socket to use")
+var refresh = flag.Bool("refresh", false, "set to true to create a new container")
+
 var testLog = log.New(os.Stdout, "TEST", log.LstdFlags)
 
 var TESTPROJECT = gl.Project{
@@ -50,6 +52,52 @@ func checkProject(t *testing.T, p1, p2 *gl.Project, withpublic bool) {
 	}
 }
 
+func createOrStartContainer(t *testing.T, client *docker.Client, contname string) (*gl.Client, *docker.Container) {
+	conts, e := client.ListContainers(docker.ListContainersOptions{All: true})
+	checkErrorCondition(t, e != nil, "cannot list containers")
+	var id string
+	for _, c := range conts {
+		for _, n := range c.Names {
+			if n[1:] == contname {
+				id = c.ID
+			}
+		}
+	}
+	if *refresh && id != "" {
+		// we have an old container but we should create a new one
+		client.RemoveContainer(docker.RemoveContainerOptions{
+			ID:            id,
+			RemoveVolumes: true,
+			Force:         true,
+		})
+		id = ""
+	}
+	if id == "" {
+		cfg := docker.Config{
+			Image: "ulrichschreiner/gitlabdev",
+		}
+		opts := docker.CreateContainerOptions{
+			Config: &cfg,
+			Name:   contname,
+		}
+		cnt, e := client.CreateContainer(opts)
+
+		checkErrorCondition(t, e != nil, "cannot create docker container")
+		e = client.StartContainer(cnt.ID, nil)
+		checkErrorCondition(t, e != nil, "cannot start docker container")
+		id = cnt.ID
+	}
+	cnt, e := client.InspectContainer(id)
+	checkErrorCondition(t, e != nil, "cannot inspect docker container")
+
+	gitlabURL := "http://" + cnt.NetworkSettings.IPAddress + ":8080"
+	e = waitForGitlabDev(gitlabURL, 60)
+	checkErrorCondition(t, e != nil, "cannot start gitlab server")
+	gitlab, e := gl.OpenV3(gitlabURL)
+	checkErrorCondition(t, e != nil, "cannot open gitlabV3 API url")
+	return gitlab, cnt
+}
+
 func TestGitlab(t *testing.T) {
 	if testing.Short() {
 		t.Skip("this is a long running integration test, not for short mode")
@@ -58,19 +106,7 @@ func TestGitlab(t *testing.T) {
 	flag.Parse()
 	client, e := docker.NewClient(*endpoint)
 	checkErrorCondition(t, e != nil, "cannot create docker client")
-	cfg := docker.Config{
-		Image: "ulrichschreiner/gitlabdev",
-	}
-	opts := docker.CreateContainerOptions{
-		Config: &cfg,
-	}
-	cnt, e := client.CreateContainer(opts)
-
-	checkErrorCondition(t, e != nil, "cannot create docker container")
-	e = client.StartContainer(cnt.ID, nil)
-	checkErrorCondition(t, e != nil, "cannot start docker container")
-	cnt, e = client.InspectContainer(cnt.ID)
-	checkErrorCondition(t, e != nil, "cannot inspect docker container")
+	gitlab, _ := createOrStartContainer(t, client, "gitlabtest_container")
 
 	/*rm := docker.RemoveContainerOptions{
 		ID:            cnt.ID,
@@ -79,12 +115,6 @@ func TestGitlab(t *testing.T) {
 	}
 	defer client.RemoveContainer(rm)*/
 
-	gitlabURL := "http://" + cnt.NetworkSettings.IPAddress + ":8080"
-	//fmt.Printf("%#v\n", cnt.NetworkSettings)
-	e = waitForGitlabDev(gitlabURL, 60)
-	checkErrorCondition(t, e != nil, "cannot start gitlab server")
-	gitlab, e := gl.OpenV3(gitlabURL)
-	checkErrorCondition(t, e != nil, "cannot open gitlabV3 API url")
 	usr, e := gitlab.Session("root", nil, "start123")
 	checkErrorCondition(t, e != nil, "cannot open root session")
 	git := gitlab.Child()

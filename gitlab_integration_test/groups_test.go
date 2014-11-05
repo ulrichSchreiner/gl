@@ -13,13 +13,21 @@ const (
 func testGroups(t *testing.T, git *gl.Client) {
 	u, e := git.CreateUser("test@example.com", "username", "start123", "myname", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	checkErrorCondition(t, e != nil, "cannot create user 'username': '%s'", e)
+	defer func() {
+		git.DeleteUser(u.Id)
+	}()
 	u, e = git.EditUser(u.Id, "test@example.com", "username", "start123", "myname", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	checkErrorCondition(t, e != nil, "cannot edit user 'username': '%s'", e)
-
 	groups := createGroups(t, git)
+	defer func() {
+		for _, g := range groups {
+			git.DeleteGroup(g.Id)
+		}
+	}()
+
 	readGroups(t, git, groups)
 	testGroupMember(t, git, groups[0], u)
-	//testTransfer(t, git, u)
+	testTransfer(t, git, u)
 }
 
 func readGroups(t *testing.T, git *gl.Client, grps gl.Groups) {
@@ -57,26 +65,27 @@ func testGroupMember(t *testing.T, git *gl.Client, g gl.Group, u *gl.User) {
 
 func testTransfer(t *testing.T, git *gl.Client, u *gl.User) {
 	tp := TESTPROJECT
-	pr, e := git.CreateUserProject(
-		"testuserproject", u.Id,
+	git2 := git.Child()
+	git2.Sudo(u.Username)
+	pr, e := git2.CreateProject(
+		"testuserproject", nil, nil,
 		&tp.Description,
-		&tp.DefaultBranch,
 		&tp.IssuesEnabled,
 		&tp.MergeRequestsEnabled,
 		&tp.WikiEnabled,
 		&tp.SnippetsEnabled,
 		&tp.Public,
 		nil, nil)
+
 	checkErrorCondition(t, e != nil, "cannot create project: '%s'", e)
 
-	g, e := git.AddGroup("testgroup", "testpath")
+	g, e := git2.AddGroup("testgroup", "testpath")
 	checkErrorCondition(t, e != nil, "cannot create group: %s", e)
 
-	git.AddGroupMember(g.Id, u.Id, gl.Owner)
-	git.SetLogger(testLog)
-	//git2 := git.Child()
-	//git2.Sudo(u.Username)
-	g, e = git.TransferProjectToGroup(g.Id, pr.Id)
+	git2.AddGroupMember(g.Id, u.Id, gl.Owner)
+	git2.SetLogger(testLog)
+	t.Logf("Group=%#v\nProject=%#v\n", g, pr)
+	g, e = git2.TransferProjectToGroup(g.Id, pr.Id)
 	checkErrorCondition(t, e != nil, "cannot transfer project to group: %s", e)
 	t.Logf("g = %+v", g)
 }
