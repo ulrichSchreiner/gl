@@ -10,24 +10,33 @@ const (
 	numGroups = 5
 )
 
-func testGroups(t *testing.T, git *gl.Client) {
-	u, e := git.CreateUser("test@example.com", "username", "start123", "myname", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+func testGroups(t *testing.T, admingit *gl.Client) {
+	t.Log("create a new user for testing groups")
+	u, e := admingit.CreateUser("test@example.com", "username2", "start123", "myname2", nil, nil, nil, nil, nil, nil, nil, nil, true, true)
 	checkErrorCondition(t, e != nil, "cannot create user 'username': '%s'", e)
 	defer func() {
-		git.DeleteUser(u.Id)
+		t.Log("remove testuser for group testing")
+		admingit.DeleteUser(u.Id)
 	}()
-	u, e = git.EditUser(u.Id, "test@example.com", "username", "start123", "myname", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-	checkErrorCondition(t, e != nil, "cannot edit user 'username': '%s'", e)
+	usr, e := admingit.Session("username2", nil, "start123")
+	checkErrorCondition(t, e != nil, "cannot open username2 session")
+	git := admingit.Child()
+	git.Token(usr.PrivateToken)
+	t.Log("now creating groups")
 	groups := createGroups(t, git)
 	defer func() {
+		t.Log("remove groups in group-test")
 		for _, g := range groups {
 			git.DeleteGroup(g.Id)
 		}
 	}()
 
+	t.Log("reading groups")
 	readGroups(t, git, groups)
+	t.Log("set user to be a group member")
 	testGroupMember(t, git, groups[0], u)
-	testTransfer(t, git, u)
+	t.Log("transfer a new project to the group")
+	testTransfer(t, git, admingit, u)
 }
 
 func readGroups(t *testing.T, git *gl.Client, grps gl.Groups) {
@@ -51,8 +60,8 @@ func createGroups(t *testing.T, git *gl.Client) gl.Groups {
 func testGroupMember(t *testing.T, git *gl.Client, g gl.Group, u *gl.User) {
 	gm, e := git.AddGroupMember(g.Id, u.Id, gl.Master)
 	checkErrorCondition(t, e != nil, "cannot add group member: %s", e)
-	checkErrorCondition(t, gm.Name != "myname", "email differs: %s", gm.Email)
-	checkErrorCondition(t, gm.Username != "username", "username differs: %s", gm.Username)
+	checkErrorCondition(t, gm.Name != "myname2", "name differs: %s", gm.Name)
+	checkErrorCondition(t, gm.Username != "username2", "username differs: %s", gm.Username)
 	gms, e := git.AllGroupMembers(g.Id)
 	checkErrorCondition(t, e != nil, "cannot query all group members: %s", e)
 	checkErrorCondition(t, len(gms) != 1, "there must be exact one group member")
@@ -63,29 +72,25 @@ func testGroupMember(t *testing.T, git *gl.Client, g gl.Group, u *gl.User) {
 	checkErrorCondition(t, e != nil, "cannot delete group member: %s", e)
 }
 
-func testTransfer(t *testing.T, git *gl.Client, u *gl.User) {
+func testTransfer(t *testing.T, git *gl.Client, admingit *gl.Client, u *gl.User) {
 	tp := TESTPROJECT
-	git2 := git.Child()
-	git2.Sudo(u.Username)
-	pr, e := git2.CreateProject(
+	pr, e := git.CreateProject(
 		"testuserproject", nil, nil,
 		&tp.Description,
-		&tp.IssuesEnabled,
-		&tp.MergeRequestsEnabled,
-		&tp.WikiEnabled,
-		&tp.SnippetsEnabled,
-		&tp.Public,
+		tp.IssuesEnabled,
+		tp.MergeRequestsEnabled,
+		tp.WikiEnabled,
+		tp.SnippetsEnabled,
+		tp.Public,
 		nil, nil)
 
 	checkErrorCondition(t, e != nil, "cannot create project: '%s'", e)
+	defer git.RemoveProject(pr.Id)
 
-	g, e := git2.AddGroup("testgroup", "testpath")
+	g, e := git.AddGroup("transfer_testgroup", "transfer_testpath")
 	checkErrorCondition(t, e != nil, "cannot create group: %s", e)
+	defer git.DeleteGroup(g.Id)
 
-	git2.AddGroupMember(g.Id, u.Id, gl.Owner)
-	git2.SetLogger(testLog)
-	t.Logf("Group=%#v\nProject=%#v\n", g, pr)
-	g, e = git2.TransferProjectToGroup(g.Id, pr.Id)
+	g, e = admingit.TransferProjectToGroup(g.Id, pr.Id)
 	checkErrorCondition(t, e != nil, "cannot transfer project to group: %s", e)
-	t.Logf("g = %+v", g)
 }

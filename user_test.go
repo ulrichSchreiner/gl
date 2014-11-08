@@ -69,9 +69,8 @@ func TestUsers(t *testing.T) {
 			skype, twitter, linkedin, website := "skype", "twitter", "linkedin", "website"
 			limit := 10
 			externuid, provider, bio := "externuid", "provider", "bio"
-			admin, cancreate := true, true
 
-			cl.CreateUser(email, username, pass, name, &skype, &linkedin, &twitter, &website, &limit, &externuid, &provider, &bio, &admin, &cancreate)
+			cl.CreateUser(email, username, pass, name, &skype, &linkedin, &twitter, &website, &limit, &externuid, &provider, &bio, true, true)
 			Convey("check if the request was correct", func() {
 				So(h.method, ShouldEqual, "POST")
 				So(h.path, ShouldEqual, "/users")
@@ -84,8 +83,8 @@ func TestUsers(t *testing.T) {
 				So(h.get("linkedin"), ShouldEqual, linkedin)
 				So(h.get("website_url"), ShouldEqual, website)
 				So(h.get("projects_limit"), ShouldEqual, fmt.Sprintf("%v", limit))
-				So(h.get("can_create_group"), ShouldEqual, fmt.Sprintf("%v", cancreate))
-				So(h.get("admin"), ShouldEqual, fmt.Sprintf("%v", admin))
+				So(h.get("can_create_group"), ShouldEqual, "true")
+				So(h.get("admin"), ShouldEqual, "true")
 				So(h.get("extern_uid"), ShouldEqual, externuid)
 				So(h.get("provider"), ShouldEqual, provider)
 				So(h.get("bio"), ShouldEqual, bio)
@@ -101,9 +100,8 @@ func TestUsers(t *testing.T) {
 			skype, twitter, linkedin, website := "skype", "twitter", "linkedin", "website"
 			limit := 10
 			externuid, provider, bio := "externuid", "provider", "bio"
-			admin, cancreate := true, true
 
-			cl.EditUser(4, email, username, pass, name, &skype, &linkedin, &twitter, &website, &limit, &externuid, &provider, &bio, &admin, &cancreate)
+			cl.EditUser(4, email, username, pass, name, &skype, &linkedin, &twitter, &website, &limit, &externuid, &provider, &bio, true, true)
 			Convey("check if the request was correct", func() {
 				So(h.method, ShouldEqual, "PUT")
 				So(h.path, ShouldEqual, "/users/4")
@@ -116,8 +114,8 @@ func TestUsers(t *testing.T) {
 				So(h.get("linkedin"), ShouldEqual, linkedin)
 				So(h.get("website_url"), ShouldEqual, website)
 				So(h.get("projects_limit"), ShouldEqual, fmt.Sprintf("%v", limit))
-				So(h.get("can_create_group"), ShouldEqual, fmt.Sprintf("%v", cancreate))
-				So(h.get("admin"), ShouldEqual, fmt.Sprintf("%v", admin))
+				So(h.get("can_create_group"), ShouldEqual, "true")
+				So(h.get("admin"), ShouldEqual, "true")
 				So(h.get("extern_uid"), ShouldEqual, externuid)
 				So(h.get("provider"), ShouldEqual, provider)
 				So(h.get("bio"), ShouldEqual, bio)

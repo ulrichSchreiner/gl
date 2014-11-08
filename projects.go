@@ -25,13 +25,7 @@ const (
 	search_url         = "/projects/search/:query"
 )
 
-type MemberState string
-
 var InvalidParam = errors.NewClass("invalid parameter")
-
-const (
-	MemberActive = MemberState("active")
-)
 
 type Permission struct {
 	Access       AccessLevel       `json:"access_level,omitempty"`
@@ -49,7 +43,7 @@ type Member struct {
 	Username string      `json:"username,omitempty"`
 	EMail    string      `json:"email,omitempty"`
 	Name     string      `json:"name,omitempty"`
-	State    MemberState `json:"state,omitempty"`
+	State    State       `json:"state,omitempty"`
 	Created  time.Time   `json:"created_at,omitempty"`
 	Access   AccessLevel `json:"access_level,omitempty"`
 }
@@ -89,6 +83,7 @@ type Project struct {
 	LastActivity         time.Time       `json:"last_activity_at, omitempty"`
 	Archived             bool            `json:"archived, omitempty"`
 	Permissions          Permissions     `json:"permissions,omitempty"`
+	Namespace            *Namespace      `json:"namespace,omitempty"`
 }
 type Projects []Project
 
@@ -225,21 +220,21 @@ func (g *Client) AllEvents(id string) (Events, error) {
 }
 
 func (g *Client) CreateProject(name string, path *string, nsid *int, description *string,
-	issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled *bool,
-	public *bool, vis *VisibilityLevel, importUrl *string) (*Project, error) {
+	issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled bool,
+	public bool, vis *VisibilityLevel, importUrl *string) (*Project, error) {
 	return g.createProject(projects_url, nil, name, path, nsid, description, nil, issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled,
 		public, vis, importUrl)
 }
 func (g *Client) CreateUserProject(name string, uid int, description, defaultbranch *string,
-	issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled *bool,
-	public *bool, vis *VisibilityLevel, importUrl *string) (*Project, error) {
+	issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled bool,
+	public bool, vis *VisibilityLevel, importUrl *string) (*Project, error) {
 	return g.createProject(userprojects_url, map[string]interface{}{":user_id": uid}, name, nil, nil, description, defaultbranch,
 		issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled,
 		public, vis, importUrl)
 }
 func (g *Client) createProject(purl string, urlparms map[string]interface{}, name string, path *string, nsid *int, description, defbranch *string,
-	issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled *bool,
-	public *bool, vis *VisibilityLevel, importUrl *string) (*Project, error) {
+	issuesEnabled, mergeRQenabled, wikiEnabled, snippetsEnabled bool,
+	public bool, vis *VisibilityLevel, importUrl *string) (*Project, error) {
 	vals := make(url.Values)
 	vals.Set("name", name)
 	addString(vals, "path", path)
@@ -372,7 +367,7 @@ func (g *Client) Hook(id string, hid int) (*Hook, error) {
 	return &p, nil
 }
 
-func (g *Client) AddHook(id string, hurl string, push, iss, merge *bool) (*Hook, error) {
+func (g *Client) AddHook(id string, hurl string, push, iss, merge bool) (*Hook, error) {
 	var h Hook
 	u := expandUrl(hooks_url, map[string]interface{}{":id": id})
 	vals := make(url.Values)
@@ -387,7 +382,7 @@ func (g *Client) AddHook(id string, hurl string, push, iss, merge *bool) (*Hook,
 	return &h, nil
 }
 
-func (g *Client) EditHook(id string, hid int, hurl string, push, iss, merge *bool) (*Hook, error) {
+func (g *Client) EditHook(id string, hid int, hurl string, push, iss, merge bool) (*Hook, error) {
 	var h Hook
 	u := expandUrl(hook_url, map[string]interface{}{":id": id, ":hook_id": hid})
 	vals := make(url.Values)

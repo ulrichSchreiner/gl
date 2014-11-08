@@ -99,8 +99,6 @@ func addInt(mp url.Values, key string, val *int) {
 		mp.Set(key, strconv.Itoa(*val))
 	}
 }
-func addBool(mp url.Values, key string, val *bool) {
-	if val != nil {
-		mp.Set(key, fmt.Sprintf("%v", *val))
-	}
+func addBool(mp url.Values, key string, val bool) {
+	mp.Set(key, fmt.Sprintf("%v", val))
 }

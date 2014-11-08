@@ -30,7 +30,7 @@ func TestProjects(t *testing.T) {
 			})
 			srv, cl := StubHandler(h)
 			defer srv.Close()
-			p, _ := cl.CreateProject(name, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			p, _ := cl.CreateProject(name, nil, nil, nil, false, false, false, false, false, nil, nil)
 			Convey("it must be a post to the correct url", func() {
 				So(h.method, ShouldEqual, "POST")
 				So(h.path, ShouldEqual, projects_url)
@@ -41,9 +41,6 @@ func TestProjects(t *testing.T) {
 					"path",
 					"namespace_id",
 					"description",
-					"merge_requests_enabled",
-					"issues_enabled", "wiki_enabled", "snippets_enabled",
-					"public",
 					"visibility_level", "import_url")
 			})
 			Convey("and the result should be correct unmarshalled", func() {
@@ -61,7 +58,7 @@ func TestProjects(t *testing.T) {
 			srv, cl := StubHandler(h)
 			defer srv.Close()
 			cl.CreateProject(prj.Name, &prj.Path, &namespaceid, &prj.Description,
-				&prj.IssuesEnabled, &prj.MergeRequestsEnabled, &prj.WikiEnabled, &prj.SnippetsEnabled, &prj.Public, &prj.Visibility, &iurl)
+				prj.IssuesEnabled, prj.MergeRequestsEnabled, prj.WikiEnabled, prj.SnippetsEnabled, prj.Public, &prj.Visibility, &iurl)
 			Convey("the mapped URL parameters must be correct", func() {
 				So(h.get("name"), ShouldEqual, prj.Name)
 				So(h.get("path"), ShouldEqual, prj.Path)
@@ -100,8 +97,8 @@ func TestProjects(t *testing.T) {
 			srv, cl := StubHandler(h)
 			defer srv.Close()
 			cl.CreateUserProject(name, user, nil, &branch,
-				nil, nil, nil, nil,
-				nil, nil, nil)
+				false, false, false, false, false,
+				nil, nil)
 
 			Convey("it must be a post to the correct url", func() {
 				So(h.method, ShouldEqual, "POST")
@@ -112,9 +109,6 @@ func TestProjects(t *testing.T) {
 				So(h.get("default_branch"), ShouldEqual, branch)
 				So(h.values, hasnot,
 					"description",
-					"merge_requests_enabled",
-					"issues_enabled", "wiki_enabled", "snippets_enabled",
-					"public",
 					"visibility_level", "import_url")
 			})
 		})
@@ -254,7 +248,7 @@ func TestProjects(t *testing.T) {
 			})
 			srv, cl := StubHandler(h)
 			defer srv.Close()
-			cl.AddHook(pid, hurl, &push, &iss, &merge)
+			cl.AddHook(pid, hurl, push, iss, merge)
 			Convey("the url, parameters and return values should be ok", func() {
 				So(h.method, ShouldEqual, "POST")
 				So(h.path, ShouldEqual, fmt.Sprintf("/projects/%s/hooks", pid))
@@ -275,7 +269,7 @@ func TestProjects(t *testing.T) {
 			})
 			srv, cl := StubHandler(h)
 			defer srv.Close()
-			cl.EditHook(pid, hid, hurl, &push, &iss, &merge)
+			cl.EditHook(pid, hid, hurl, push, iss, merge)
 			Convey("the url, parameters and return values should be ok", func() {
 				So(h.method, ShouldEqual, "PUT")
 				So(h.path, ShouldEqual, fmt.Sprintf("/projects/%s/hooks/%d", pid, hid))

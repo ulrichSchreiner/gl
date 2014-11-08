@@ -18,8 +18,7 @@ func main() {
 	git := gitlab.Child()
 	git.Token(*token)
 
-	git.CreateProject("test",
-		nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	git.CreateProject("test", nil, nil, nil, false, false, false, false, false, nil, nil)
 	prjs, err := git.AllVisibleProjects()
 	if err != nil {
 		panic(err)

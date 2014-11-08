@@ -23,7 +23,7 @@ func testMembers(t *testing.T, git *gl.Client, p gl.Project) []gl.User {
 	for i := 0; i < numUsers; i++ {
 		username := fmt.Sprintf("user_%d", i)
 		email := fmt.Sprintf("%s@example.com", username)
-		u, e := git.CreateUser(email, username, "mypassword", "myname", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		u, e := git.CreateUser(email, username, "mypassword", "myname", nil, nil, nil, nil, nil, nil, nil, nil, false, true)
 		checkErrorCondition(t, e != nil, "cannot create user '%s': '%s'", username, e)
 		res = append(res, *u)
 		git.AddTeamMember(strconv.Itoa(p.Id), u.Id, gl.Developer)

@@ -140,6 +140,7 @@ func (g *Client) httpexecute(method, u string, params url.Values, paramInbody bo
 	// overwrite the body value
 	if paramInbody && len(params) > 0 && body == nil {
 		body = []byte(params.Encode())
+		newurl.RawQuery = ""
 	}
 	if body != nil {
 		reader := bytes.NewReader(body)
@@ -180,11 +181,11 @@ func (g *Client) httpexecute(method, u string, params url.Values, paramInbody bo
 
 func (g *Client) execute(method, u string, params url.Values, paramInbody bool, body []byte, pg *Page, target interface{}) (*Pagination, error) {
 	buf, pag, err := g.httpexecute(method, u, params, paramInbody, body, pg)
+	if g.log != nil {
+		g.log.Printf("%s %s [%+v], buf = %s, err=%s\n", method, u, params, string(buf), err)
+	}
 	if err != nil {
 		return nil, err
-	}
-	if g.log != nil {
-		g.log.Printf("%s %s [%+v], buf = %s}\n", method, u, params, string(buf))
 	}
 	if target != nil {
 		err = json.Unmarshal(buf, target)

@@ -51,7 +51,7 @@ type MergeComment struct {
 	Note   string `json:"note,omitempty"`
 }
 
-func (g *Client) MergeRequests(id string, state *MergeState, orderBy *MergeOrderBy, asc *bool, pg *Page) ([]MergeRequest, *Pagination, error) {
+func (g *Client) MergeRequests(id string, state *MergeState, orderBy *MergeOrderBy, asc bool, pg *Page) ([]MergeRequest, *Pagination, error) {
 	var r []MergeRequest
 	parm := make(url.Values)
 	if state != nil {
@@ -60,12 +60,10 @@ func (g *Client) MergeRequests(id string, state *MergeState, orderBy *MergeOrder
 	if orderBy != nil {
 		parm.Set("order_by", fmt.Sprintf("%s", *orderBy))
 	}
-	if asc != nil {
-		if *asc {
-			parm.Set("sort", "asc")
-		} else {
-			parm.Set("sort", "desc")
-		}
+	if asc {
+		parm.Set("sort", "asc")
+	} else {
+		parm.Set("sort", "desc")
 	}
 	u := expandUrl(mergerequests_url, map[string]interface{}{":id": id})
 	pager, e := g.get(u, parm, pg, &r)
@@ -75,7 +73,7 @@ func (g *Client) MergeRequests(id string, state *MergeState, orderBy *MergeOrder
 	return r, pager, nil
 }
 
-func (g *Client) AllMergeRequests(pid string, state *MergeState, orderBy *MergeOrderBy, asc *bool) ([]MergeRequest, error) {
+func (g *Client) AllMergeRequests(pid string, state *MergeState, orderBy *MergeOrderBy, asc bool) ([]MergeRequest, error) {
 	var r []MergeRequest
 	err := fetchAll(func(pg *Page) (interface{}, *Pagination, error) {
 		return g.MergeRequests(pid, state, orderBy, asc, pg)

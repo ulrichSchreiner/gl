@@ -1,6 +1,7 @@
 package gl
 
 import (
+	"fmt"
 	"net/url"
 )
 
@@ -100,7 +101,7 @@ func (g *Client) CurrentUser() (*User, error) {
 }
 func (g *Client) CreateUser(email, username, password, name string,
 	skype, linkedin, twitter, website *string,
-	limit *int, externUid, provider, bio *string, admin, canCreateGroup *bool) (*User, error) {
+	limit *int, externUid, provider, bio *string, admin, canCreateGroup bool) (*User, error) {
 	var us User
 	vals := make(url.Values)
 	vals.Set("email", email)
@@ -115,8 +116,8 @@ func (g *Client) CreateUser(email, username, password, name string,
 	addString(vals, "extern_uid", externUid)
 	addString(vals, "provider", provider)
 	addString(vals, "bio", bio)
-	addBool(vals, "admin", admin)
-	addBool(vals, "can_create_group", canCreateGroup)
+	vals.Set("admin", fmt.Sprintf("%v", admin))
+	vals.Set("can_create_group", fmt.Sprintf("%v", canCreateGroup))
 	e := g.post(users_url, vals, &us)
 	if e != nil {
 		return nil, e
@@ -126,7 +127,7 @@ func (g *Client) CreateUser(email, username, password, name string,
 
 func (g *Client) EditUser(uid int, email, username, password, name string,
 	skype, linkedin, twitter, website *string,
-	limit *int, externUid, provider, bio *string, admin, canCreateGroup *bool) (*User, error) {
+	limit *int, externUid, provider, bio *string, admin, canCreateGroup bool) (*User, error) {
 	var us User
 	vals := make(url.Values)
 	vals.Set("email", email)
@@ -141,8 +142,8 @@ func (g *Client) EditUser(uid int, email, username, password, name string,
 	addString(vals, "extern_uid", externUid)
 	addString(vals, "provider", provider)
 	addString(vals, "bio", bio)
-	addBool(vals, "admin", admin)
-	addBool(vals, "can_create_group", canCreateGroup)
+	vals.Set("admin", fmt.Sprintf("%v", admin))
+	vals.Set("can_create_group", fmt.Sprintf("%v", canCreateGroup))
 	u := expandUrl(user_url, map[string]interface{}{":id": uid})
 	e := g.put(u, vals, &us)
 	if e != nil {

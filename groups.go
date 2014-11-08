@@ -8,16 +8,16 @@ import (
 const (
 	groups_url       = "/groups"
 	group_url        = "/groups/:id"
-	projectgroup_url = " /groups/:id/projects/:project_id"
+	projectgroup_url = "/groups/:id/projects/:project_id"
 	groupmembers_url = "/groups/:id/members"
 	groupmember_url  = "/groups/:id/members/:user_id"
 )
 
 type Group struct {
-	Id     int    `json:"id,omitempty"`
-	Name   string `json:"name,omitempty"`
-	Path   string `json:"path,omitempty"`
-	OwerId int    `json:"owner_id, omitempty"`
+	Id      int    `json:"id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Path    string `json:"path,omitempty"`
+	OwnerId int    `json:"owner_id, omitempty"`
 }
 type Groups []Group
 
@@ -70,9 +70,10 @@ func (g *Client) AddGroup(name, path string) (*Group, error) {
 }
 
 func (g *Client) TransferProjectToGroup(gid, pid int) (*Group, error) {
+	v := make(url.Values)
 	u := expandUrl(projectgroup_url, map[string]interface{}{":id": gid, ":project_id": pid})
 	var gr Group
-	e := g.post(u, nil, &gr)
+	e := g.post(u, v, &gr)
 	return &gr, e
 }
 

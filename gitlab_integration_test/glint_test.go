@@ -120,6 +120,8 @@ func TestGitlab(t *testing.T) {
 	git := gitlab.Child()
 	git.Token(usr.PrivateToken)
 	projects := createProjects(t, git, TESTPROJECT, 20)
+	defer removeProjectsWithId(t, git, projects)
+
 	listAllProjects(t, git, 20)
 	fetchSingleProject(t, git, "root", "testproject_0_1_2_3")
 	fetchProjectsPaged(t, git, 5, 20)
@@ -127,7 +129,6 @@ func TestGitlab(t *testing.T) {
 	testUsersAndMembers(t, git, projects[0])
 	testGroups(t, git)
 
-	removeProjectsWithId(t, git, projects)
 }
 
 func listAllProjects(t *testing.T, g *gl.Client, numExp int) {
@@ -174,11 +175,11 @@ func createProjects(t *testing.T, git *gl.Client, templ gl.Project, num int) []g
 		pr, e := git.CreateProject(
 			templ.Name, nil, nil,
 			&templ.Description,
-			&templ.IssuesEnabled,
-			&templ.MergeRequestsEnabled,
-			&templ.WikiEnabled,
-			&templ.SnippetsEnabled,
-			&templ.Public,
+			templ.IssuesEnabled,
+			templ.MergeRequestsEnabled,
+			templ.WikiEnabled,
+			templ.SnippetsEnabled,
+			templ.Public,
 			nil, nil)
 		checkErrorCondition(t, e != nil, "cannot create project: '%s'", e)
 		projects = append(projects, *pr)

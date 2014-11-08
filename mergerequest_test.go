@@ -16,8 +16,7 @@ func TestMergerequests(t *testing.T) {
 			defer srv.Close()
 			s := OpenedMerges
 			ord := OrderByCreated
-			asc := true
-			cl.AllMergeRequests("1", &s, &ord, &asc)
+			cl.AllMergeRequests("1", &s, &ord, true)
 			Convey("check if the request was correct", func() {
 				So(h.method, ShouldEqual, "GET")
 				So(h.path, ShouldEqual, "/projects/1/merge_requests")
