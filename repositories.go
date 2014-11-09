@@ -296,19 +296,19 @@ func (g *Client) ReadFile(id, filepath, ref string) (*RepoFile, error) {
 	}
 	return &b, nil
 }
-func (g *Client) CreateFile(id, filepath, branch, commitmsg, content string, encoding *string) (*RepoFile, error) {
+func (g *Client) CreateFile(id, filepath, branch, commitmsg, content string, encoding string) (*RepoFile, error) {
 	return g.changeFile(true, id, filepath, branch, commitmsg, content, encoding)
 }
-func (g *Client) UpdateFile(id, filepath, branch, commitmsg, content string, encoding *string) (*RepoFile, error) {
+func (g *Client) UpdateFile(id, filepath, branch, commitmsg, content string, encoding string) (*RepoFile, error) {
 	return g.changeFile(false, id, filepath, branch, commitmsg, content, encoding)
 }
-func (g *Client) changeFile(ispost bool, id, filepath, branch, commitmsg, content string, encoding *string) (*RepoFile, error) {
+func (g *Client) changeFile(ispost bool, id, filepath, branch, commitmsg, content string, encoding string) (*RepoFile, error) {
 	var b RepoFile
 	u := expandUrl(readfile_url, map[string]interface{}{":id": id})
 	v := make(url.Values)
 	v.Set("file_path", filepath)
 	v.Set("branch_name", branch)
-	addString(v, "encoding", encoding)
+	v.Set("encoding", encoding)
 	v.Set("content", content)
 	v.Set("commit_message", commitmsg)
 	var e error

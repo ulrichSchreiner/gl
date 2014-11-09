@@ -226,7 +226,7 @@ func (g *Client) DeleteCurrentUserKey(kid int) (*SshKey, error) {
 	return &us, nil
 }
 func (g *Client) CreateSshKey(uid int, title, key string) (*SshKey, error) {
-	u := expandUrl(userkeys_url, map[string]interface{}{":id": uid})
+	u := expandUrl(userkeys_url, map[string]interface{}{":uid": uid})
 	var k SshKey
 	vals := make(url.Values)
 	vals.Set("title", title)

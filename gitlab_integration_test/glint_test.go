@@ -128,6 +128,7 @@ func TestGitlab(t *testing.T) {
 
 	testUsersAndMembers(t, git, projects[0])
 	testGroups(t, git)
+	testRepositories(t, git)
 
 }
 

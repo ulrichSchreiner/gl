@@ -89,6 +89,10 @@ func New(hosturl, apiPath string, certcheck bool) (*Client, error) {
 	}, nil
 }
 
+func (c *Client) Host() string {
+	return strings.Split(c.hostURL.Host, ":")[0]
+}
+
 // Returns a client to gitlab with a copy of all values in the original
 // client.
 func (c *Client) Child() *Client {

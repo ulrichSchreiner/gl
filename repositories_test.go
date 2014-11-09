@@ -142,8 +142,7 @@ func TestRepository(t *testing.T) {
 			})
 			srv, cl := StubHandler(h)
 			defer srv.Close()
-			encd := "myenc"
-			cl.CreateFile("1", "myfile", "mybranch", "mycommit", "mycontent", &encd)
+			cl.CreateFile("1", "myfile", "mybranch", "mycommit", "mycontent", "myenc")
 			Convey("check if the request was correct", func() {
 				So(h.method, ShouldEqual, "POST")
 				So(h.path, ShouldEqual, "/projects/1/repository/files")
@@ -160,8 +159,7 @@ func TestRepository(t *testing.T) {
 			})
 			srv, cl := StubHandler(h)
 			defer srv.Close()
-			encd := "myenc"
-			cl.UpdateFile("1", "myfile", "mybranch", "mycommit", "mycontent", &encd)
+			cl.UpdateFile("1", "myfile", "mybranch", "mycommit", "mycontent", "myenc")
 			Convey("check if the request was correct", func() {
 				So(h.method, ShouldEqual, "PUT")
 				So(h.path, ShouldEqual, "/projects/1/repository/files")

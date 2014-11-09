@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spacemonkeygo/errors"
 	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -136,6 +137,10 @@ type Hook struct {
 	IssuesEvents        bool      `json:"issues_events,omitempty"`
 	MergeRequestsEvents bool      `json:"merge_requests_events,omitempty"`
 	CreatedAt           time.Time `json:"created_at, omitempty"`
+}
+
+func (p *Project) Sid() string {
+	return strconv.Itoa(p.Id)
 }
 
 func (g *Client) projects(purl string, pg *Page) (Projects, *Pagination, error) {
