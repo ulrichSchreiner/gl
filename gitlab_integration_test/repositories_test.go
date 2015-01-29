@@ -2,7 +2,6 @@ package glint
 
 import (
 	"fmt"
-	"github.com/ulrichSchreiner/gl"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -10,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ulrichSchreiner/gl"
 )
 
 func uploadGitRepo(t *testing.T, git *gl.Client, uid int, remote string, host string) {

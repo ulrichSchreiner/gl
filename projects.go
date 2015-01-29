@@ -2,10 +2,11 @@ package gl
 
 import (
 	"fmt"
-	"github.com/spacemonkeygo/errors"
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/spacemonkeygo/errors"
 )
 
 const (
@@ -265,14 +266,9 @@ func (g *Client) createProject(purl string, urlparms map[string]interface{}, nam
 	return &p, err
 }
 
-func (g *Client) RemoveProject(id int) (*Project, error) {
-	var p Project
+func (g *Client) RemoveProject(id int) error {
 	u := expandUrl(project_url, map[string]interface{}{":id": id})
-	e := g.delete(u, nil, &p)
-	if e != nil {
-		return nil, e
-	}
-	return &p, nil
+	return g.delete(u, nil, nil)
 }
 
 func (g *Client) AllTeamMembers(id string, query *string) (Members, error) {

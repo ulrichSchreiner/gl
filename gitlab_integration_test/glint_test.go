@@ -3,14 +3,15 @@ package glint
 import (
 	"flag"
 	"fmt"
-	"github.com/fsouza/go-dockerclient"
-	"github.com/ulrichSchreiner/gl"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/fsouza/go-dockerclient"
+	"github.com/ulrichSchreiner/gl"
 )
 
 // run this tests with: go test -short=false
@@ -141,9 +142,8 @@ func listAllProjects(t *testing.T, g *gl.Client, numExp int) {
 func removeProjectsWithId(t *testing.T, git *gl.Client, prjs []gl.Project) {
 	t.Logf("Removing Projects from Gitlab with their ID's")
 	for _, p := range prjs {
-		rmp, e := git.RemoveProject(p.Id)
-		checkErrorCondition(t, e != nil, "cannot remove project '%s'", p.Name)
-		checkProject(t, &p, rmp, false)
+		e := git.RemoveProject(p.Id)
+		checkErrorCondition(t, e != nil, "cannot remove project '%s': %s", p.Name, e)
 	}
 }
 
