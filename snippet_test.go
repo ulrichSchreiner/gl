@@ -39,7 +39,7 @@ func TestSnippets(t *testing.T) {
 			srv, cl := StubHandler(h)
 			defer srv.Close()
 			title, filename, code := "title", "filename", "code"
-			cl.CreateSnippet("1", title, filename, code)
+			cl.CreateSnippet("1", title, filename, code, Public)
 			Convey("check if the request was correct", func() {
 				So(h.method, ShouldEqual, "POST")
 				So(h.path, ShouldEqual, "/projects/1/snippets")

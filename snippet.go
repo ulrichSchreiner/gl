@@ -62,13 +62,15 @@ func (g *Client) GetSnippet(pid string, snipid int) (*Snippet, error) {
 	return &s, nil
 }
 
-func (g *Client) CreateSnippet(id string, title, filename, code string) (*Snippet, error) {
+func (g *Client) CreateSnippet(id string, title, filename, code string, visibility VisibilityLevel) (*Snippet, error) {
 	u := expandUrl(snippets_url, map[string]interface{}{":id": id})
 	var s Snippet
 	vals := make(url.Values)
 	vals.Set("title", title)
 	vals.Set("file_name", filename)
 	vals.Set("code", code)
+	v := int(visibility)
+	addInt(vals, "visibility_level", &v)
 	e := g.post(u, vals, &s)
 	if e != nil {
 		return nil, e
