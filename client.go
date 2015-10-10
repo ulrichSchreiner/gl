@@ -145,13 +145,11 @@ func (g *Client) httpexecute(method, u string, params url.Values, paramInbody bo
 	if paramInbody && len(params) > 0 && body == nil {
 		body = []byte(params.Encode())
 		newurl.RawQuery = ""
-		if g.log != nil {
-			g.log.Printf("body is now '%s'", string(body))
-		}
 	}
 	if body != nil {
 		reader := bytes.NewReader(body)
 		req, err = http.NewRequest(method, newurl.String(), reader)
+		req.Header.Set("Content-Type","application/x-www-form-urlencoded")
 	} else {
 		req, err = http.NewRequest(method, newurl.String(), nil)
 	}
