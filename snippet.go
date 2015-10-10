@@ -24,9 +24,9 @@ type Snippet struct {
 	Id       int            `json:"id,omitempty"`
 	Title    string         `json:"title,omitempty"`
 	FileName string         `json:"file_name,omitempty"`
-	Expires  time.Time      `json:"expires_at,omitempty"`
-	Updated  time.Time      `json:"updated_at,omitempty"`
-	Created  time.Time      `json:"created_at,omitempty"`
+	Expires  *time.Time      `json:"expires_at,omitempty"`
+	Updated  *time.Time      `json:"updated_at,omitempty"`
+	Created  *time.Time      `json:"created_at,omitempty"`
 	Author   *SnippetAuthor `json:"author,omitempty"`
 }
 
