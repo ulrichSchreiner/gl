@@ -5,14 +5,15 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/spacemonkeygo/errors"
-	"github.com/spacemonkeygo/errors/errhttp"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/spacemonkeygo/errors"
+	"github.com/spacemonkeygo/errors/errhttp"
 )
 
 const (
@@ -149,7 +150,7 @@ func (g *Client) httpexecute(method, u string, params url.Values, paramInbody bo
 	if body != nil {
 		reader := bytes.NewReader(body)
 		req, err = http.NewRequest(method, newurl.String(), reader)
-		req.Header.Set("Content-Type","application/x-www-form-urlencoded")
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	} else {
 		req, err = http.NewRequest(method, newurl.String(), nil)
 	}
@@ -175,11 +176,11 @@ func (g *Client) httpexecute(method, u string, params url.Values, paramInbody bo
 	}
 
 	if resp.StatusCode >= 400 {
-		msg := fmt.Sprintf("%s (%d)", req.URL.String(), resp.StatusCode)
+		msg := fmt.Sprintf("%s %s (%d): %s", method, req.URL.String(), resp.StatusCode, strings.TrimSpace(string(contents)))
 		if g.log != nil {
-			g.log.Printf("%s %s -> %d: %s", method, req.URL.String(), resp.StatusCode, strings.TrimSpace(string(contents)))
+			g.log.Printf("%s", msg)
 		}
-		return nil, nil, gitlabError.NewWith(msg, errhttp.SetStatusCode(resp.StatusCode), errhttp.OverrideErrorBody(strings.TrimSpace(string(contents))))
+		return nil, nil, gitlabError.NewWith(msg)
 	}
 	return contents, p, nil
 }
