@@ -159,7 +159,8 @@ func (g *Client) httpexecute(method, u string, params url.Values, paramInbody bo
 	if err != nil {
 		return nil, nil, unknownError.Wrap(err)
 	}
-	req.Header.Add(privateToken, g.token)
+	// don't use Add-method, it canonicalizes header names
+	req.Header[privateToken] = []string{g.token}
 	if g.sudo != nil {
 		req.Header.Add(paramSudo, *g.sudo)
 	}
