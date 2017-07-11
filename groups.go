@@ -14,10 +14,13 @@ const (
 )
 
 type Group struct {
-	Id      int    `json:"id,omitempty"`
-	Name    string `json:"name,omitempty"`
-	Path    string `json:"path,omitempty"`
-	OwnerId int    `json:"owner_id, omitempty"`
+	Id       int    `json:"id,omitempty"`
+	Name     string `json:"name,omitempty"`
+	FullName string `json:"full_name,omitempty"`
+	Path     string `json:"path,omitempty"`
+	FullPath string `json:"full_path, omitempty"`
+	OwnerId  int    `json:"owner_id, omitempty"`
+	ParentID *int   `json:"parent_id,omitempty"`
 }
 type Groups []Group
 
