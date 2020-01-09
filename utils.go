@@ -38,6 +38,7 @@ func parseLinkHeaders(lnk string) *Pagination {
 	var p Pagination
 	lnks := strings.Split(lnk, ",")
 	for _, l := range lnks {
+		l = strings.TrimSpace(l)
 		if strings.Contains(l, "rel=\"first\"") {
 			u := strings.Split(l, ";")[0]
 			u = u[1 : len(u)-1]
